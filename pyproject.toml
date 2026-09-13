@@ -1,0 +1,42 @@
+# Tooling configuration only — VERA is not packaged/published.
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = "(notebooks|frontend|\\.venv)"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["notebooks", "frontend", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "C4", "RUF"]
+ignore = [
+    "B008",   # FastAPI `Depends(...)` in argument defaults is idiomatic
+    "RUF012", # class-level constant lists/dicts are intentional
+    "RUF002", # mathematical notation in model documentation is intentional
+    "RUF003", # mathematical notation in comments is intentional
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "vera_training"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests", "training/tests"]
+pythonpath = ["backend", "training"]
+addopts = "-ra"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore::DeprecationWarning:celery.*",
+    "ignore::DeprecationWarning:kombu.*",
+]

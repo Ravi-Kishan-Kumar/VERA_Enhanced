@@ -1,0 +1,46 @@
+# ---- Secrets (NEVER commit) ----
+.env
+.env.*
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+test.db
+*.db
+
+# ---- Data & model artifacts (large; tracked on HuggingFace Hub) ----
+data/raw/*
+data/processed/*
+data/models/*
+model_cache/
+!data/**/.gitkeep
+data/labels/labels_checkpoint.jsonl
+
+# ---- Notebooks ----
+.ipynb_checkpoints/
+notebooks/outputs/
+vera_experience_model/
+*_onnx/
+*_onnx_quantized/
+
+# ---- Node / Next.js ----
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+*.tsbuildinfo
+.vercel
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
+.idea/

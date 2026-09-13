@@ -1,0 +1,36 @@
+# =============================================================================
+# VERA — DEVELOPMENT / TRAINING requirements (local dev + Google Colab)
+# -----------------------------------------------------------------------------
+# Never deploy this file. It pulls torch + transformers (~2 GB installed).
+#
+# Local (CPU):  pip install -r requirements-dev.txt \
+#                   --extra-index-url https://download.pytorch.org/whl/cpu
+# Colab (GPU):  torch is preinstalled; the notebooks install only what is missing.
+# =============================================================================
+
+-r backend/requirements.txt
+-r backend/requirements-lint.txt
+
+# --- Deep learning / export --------------------------------------------------
+torch==2.4.0
+transformers==4.45.0
+sentencepiece==0.2.0             # DeBERTa-v3 slow tokenizer -> fast conversion
+protobuf==5.28.2
+datasets==3.0.0
+accelerate==0.34.0
+onnx==1.16.0
+optimum[exporters]==1.23.1       # 1.21.0 in PRD caps transformers<4.44; 1.23.1 supports 4.45
+
+# --- Label generation --------------------------------------------------------
+google-genai==0.3.0              # replaces deprecated google-generativeai (see DECISIONS.md)
+groq==0.11.0
+
+# --- Offline calibration / evaluation ----------------------------------------
+mapie==0.8.6                     # offline only — never imported in production
+scipy==1.14.1
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# --- Notebooks ---------------------------------------------------------------
+jupyter==1.1.1
+nbformat==5.10.4
