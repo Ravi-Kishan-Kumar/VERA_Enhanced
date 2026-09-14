@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ProductDetail } from "@/components/ProductDetail";
+import { ProductDetail } from "@/components/vera/product-detail";
 import { pageMetadata } from "@/lib/metadata";
 
 type Props = { params: Promise<{ asin: string }> };
