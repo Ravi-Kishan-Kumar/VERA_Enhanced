@@ -82,3 +82,13 @@ No Lighthouse audit, remote dependency scan, Docker runtime test, or trained-mod
    Investigate any unconfirmed submission before rerunning; the public API has no idempotency key.
 
 No claim is made that the remaining model or deployment gates have passed.
+
+## Follow-up: prompt cleanup
+
+At the user's explicit request, deleted the tracked `CODEX_PROMPT.md` and untracked
+`CODEX_TASKS_ROUND2.md` from the workspace. Removed the tracked prompt from the current Git
+snapshot and added root-level prompt/task ignore patterns. Updated README's live-boundary link;
+the training freeze remains in force. Kept these operational notes because they are not a prompt.
+Verified file absence, ignore rules, and staged whitespace. This documentation-only cleanup does
+not require rerunning application tests. No push or history rewrite was performed: the tracked
+prompt is recoverable from older commits; the untracked task file has no Git recovery copy.

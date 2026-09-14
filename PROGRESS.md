@@ -64,4 +64,11 @@ There are pre-existing, uncommitted workspace diffs in `training/scripts/agreeme
 preserve them, especially the two protected pipeline files, until their owner/user confirms they
 are safe to include.
 
+## Prompt-file cleanup
+
+Removed `CODEX_PROMPT.md` and `CODEX_TASKS_ROUND2.md` at the user's request. Root-level
+Codex prompt/task Markdown files are now ignored to prevent accidental re-addition. The tracked
+prompt is removed from the current Git snapshot, not prior history. This does not lift the
+training freeze; no training files or processes were changed. No push was performed.
+
 **Last updated:** 2026-09-14 | **Owner:** Codex

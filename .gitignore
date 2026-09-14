@@ -44,3 +44,7 @@ frontend/next-env.d.ts
 .DS_Store
 Thumbs.db
 .idea/
+
+# ---- Local agent task prompts (not product source) ----
+/CODEX_PROMPT*.md
+/CODEX_TASKS*.md

@@ -10,7 +10,8 @@ prediction adds a 90% interval, and Empirical Bayes shrinkage ranks products fai
 - **Deployment:** [Production guide](docs/deployment.md), [HF Docker Space package](deploy/huggingface-space/README.md)
 - **Operations and evidence:** [Runbook](docs/operations.md), [Model card](docs/model_card.md), [Codex session notes](docs/codex_notes.md)
 
-During Claude's live training round, follow the freeze in `CODEX_TASKS_ROUND2.md`.
+During Claude's live training round, follow the ownership boundary in [PROGRESS.md](PROGRESS.md)
+and [Codex notes](docs/codex_notes.md).
 The guides below contain reference commands, not permission to start duplicate training or deployment.
 
 ```
