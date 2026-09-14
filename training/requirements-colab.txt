@@ -1,0 +1,16 @@
+# Installed by notebooks/04_finetune_experience.ipynb on Google Colab (GPU).
+# torch is preinstalled on Colab and intentionally not pinned here.
+transformers==4.45.0
+tokenizers==0.20.0
+sentencepiece==0.2.0
+protobuf==5.28.2
+datasets==3.0.0
+accelerate==0.34.0
+optimum[exporters]==1.23.1
+onnx==1.16.0
+onnxruntime==1.19.2
+scikit-learn==1.5.2
+xgboost==2.1.1
+langdetect==1.0.9
+pydantic-settings==2.5.2
+huggingface_hub==0.25.2

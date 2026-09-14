@@ -19,8 +19,14 @@ ignore = [
     "RUF003", # mathematical notation in comments is intentional
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# PRD §7.2 mandates the labeling prompt verbatim ("Exact, No Changes").
+"training/vera_training/labeling.py" = ["E501", "W291"]
+# Upper-case `X` for feature matrices is the standard ML convention.
+"training/**" = ["N803", "N806"]
+
 [tool.ruff.lint.isort]
-known-first-party = ["app", "vera_training"]
+known-first-party = ["app", "vera_training", "tests"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -39,4 +45,5 @@ asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "ignore::DeprecationWarning:celery.*",
     "ignore::DeprecationWarning:kombu.*",
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
 ]
