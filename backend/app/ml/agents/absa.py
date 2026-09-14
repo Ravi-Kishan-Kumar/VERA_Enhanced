@@ -22,7 +22,6 @@ from app.ml.constants import ASPECT_KEYWORDS, ASPECT_PHRASES, EARBUD_ASPECTS
 from app.ml.models.onnx_session import InferenceSessionLike, build_feed, create_session, softmax
 from app.ml.models.tokenizer_wrapper import LightTokenizer
 
-MAX_LENGTH = 512
 _VALID_SENTIMENTS = frozenset({"negative", "neutral", "positive"})
 
 
@@ -73,7 +72,7 @@ class ABSAModule:
         id2label: dict[int, str] | None = None,
     ) -> None:
         self.id2label = id2label or load_id2label(config_path)
-        self.tokenizer = tokenizer or LightTokenizer(tokenizer_path, max_length=MAX_LENGTH)
+        self.tokenizer = tokenizer or LightTokenizer(tokenizer_path)
         self.session = session or create_session(model_path)
 
     @staticmethod

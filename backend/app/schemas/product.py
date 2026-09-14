@@ -1,4 +1,4 @@
-"""Product ranking API contracts."""
+"""Product API contracts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from app.schemas.review import ReviewResponse
 
 
 class ProductResponse(BaseModel):
-    """Compact item in the product-ranking response."""
+    """One row of the product ranking."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,13 +23,17 @@ class ProductResponse(BaseModel):
     star_average: float | None
     review_count: int
     rank_position: int | None
+    previous_rank_position: int | None
+    aspect_summary: dict[str, Any] | None
 
 
 class ProductDetailResponse(ProductResponse):
-    """Product plus its aspect aggregate and completed/pending reviews."""
+    """Product aggregate plus one page of completed reviews."""
 
     eb_shrinkage_factor: float | None
-    aspect_summary: dict[str, Any] | None
-    previous_rank_position: int | None
     last_aggregated_at: datetime | None
     reviews: list[ReviewResponse]
+    reviews_total: int
+    reviews_limit: int
+    reviews_offset: int
+    reviews_has_more: bool

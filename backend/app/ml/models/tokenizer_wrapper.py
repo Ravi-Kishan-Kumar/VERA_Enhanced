@@ -24,17 +24,26 @@ import numpy as np
 from tokenizers import Encoding, Tokenizer
 
 _PAD_CANDIDATES = ("[PAD]", "<pad>", "<PAD>")
+DEFAULT_MAX_LENGTH = 512
 
 
 class LightTokenizer:
     """Rust-backed tokenizer producing int64 numpy batches for onnxruntime."""
 
-    def __init__(self, tokenizer_path: str | Path, max_length: int = 512) -> None:
+    def __init__(self, tokenizer_path: str | Path, max_length: int | None = None) -> None:
+        """
+        Args:
+            tokenizer_path: ``tokenizer.json`` exported with the model.
+            max_length: Truncation length. ``None`` uses the length stored in the
+                file's truncation settings (written at export so serving matches
+                training), falling back to 512.
+        """
         path = Path(tokenizer_path)
         if not path.is_file():
             raise FileNotFoundError(f"tokenizer.json not found: {path}")
         self._tok = Tokenizer.from_file(str(path))
-        self.max_length = max_length
+        stored = (self._tok.truncation or {}).get("max_length")
+        self.max_length = int(max_length or stored or DEFAULT_MAX_LENGTH)
 
         pad_token = next((t for t in _PAD_CANDIDATES if self._tok.token_to_id(t) is not None), None)
         if pad_token is None:

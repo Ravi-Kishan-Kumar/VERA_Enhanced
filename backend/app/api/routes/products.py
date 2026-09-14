@@ -1,52 +1,80 @@
-"""Product-ranking and product-detail routes."""
+"""Product ranking and detail routes (PRD §14.2, §16.4)."""
 
 from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import asc, desc, nullslast
-from sqlalchemy.orm import Session, selectinload
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import asc, desc, func, nulls_last
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.models.product import Product
+from app.models.review import Review, ReviewStatus
 from app.schemas.product import ProductDetailResponse, ProductResponse
+from app.schemas.review import ReviewResponse
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
-SortBy = Literal["corrected_score", "review_count", "uncertainty"]
+SortBy = Literal["corrected_score", "star_average", "review_count", "uncertainty", "rank_position"]
 SortOrder = Literal["asc", "desc"]
 
 
 @router.get("", response_model=list[ProductResponse])
 def list_products(
+    response: Response,
     sort_by: SortBy = "corrected_score",
     order: SortOrder = "desc",
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Product]:
-    """Return a stable, paginated product ranking."""
+    """Paginated ranking of scored products.
+
+    Product shells without a completed review are excluded. Ties break on ASIN
+    so pagination is stable. ``X-Total-Count`` carries the unpaginated total.
+    """
     column = getattr(Product, sort_by)
     direction: Any = desc(column) if order == "desc" else asc(column)
+    query = db.query(Product).filter(Product.corrected_score.is_not(None))
+    response.headers["X-Total-Count"] = str(query.count())
     return (
-        db.query(Product)
-        .order_by(nullslast(direction), asc(Product.asin))
-        .offset(offset)
-        .limit(limit)
-        .all()
+        query.order_by(nulls_last(direction), asc(Product.asin)).offset(offset).limit(limit).all()
     )
 
 
 @router.get("/{asin}", response_model=ProductDetailResponse)
-def get_product(asin: str, db: Session = Depends(get_db)) -> Product:
-    """Return a product with every associated review."""
-    product = (
-        db.query(Product)
-        .options(selectinload(Product.reviews))
-        .filter(Product.asin == asin)
-        .first()
-    )
+def get_product(
+    asin: str,
+    reviews_limit: int = Query(default=20, ge=1, le=100),
+    reviews_offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+) -> ProductDetailResponse:
+    """Product aggregate plus a newest-first page of its completed reviews."""
+    product = db.get(Product, asin)
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    return product
+
+    base = db.query(Review).filter(
+        Review.product_asin == asin, Review.status == ReviewStatus.DONE.value
+    )
+    total = base.with_entities(func.count(Review.id)).scalar() or 0
+    reviews = (
+        base.order_by(desc(Review.created_at), desc(Review.id))
+        .offset(reviews_offset)
+        .limit(reviews_limit)
+        .all()
+    )
+    return ProductDetailResponse.model_validate(
+        {
+            **ProductResponse.model_validate(product).model_dump(),
+            "eb_shrinkage_factor": product.eb_shrinkage_factor,
+            "aspect_summary": product.aspect_summary,
+            "last_aggregated_at": product.last_aggregated_at,
+            "reviews": [ReviewResponse.model_validate(r) for r in reviews],
+            "reviews_total": total,
+            "reviews_limit": reviews_limit,
+            "reviews_offset": reviews_offset,
+            "reviews_has_more": reviews_offset + len(reviews) < total,
+        }
+    )

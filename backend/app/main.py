@@ -18,6 +18,7 @@ def create_app() -> FastAPI:
         allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["X-Total-Count"],
     )
     app.include_router(health.router)
     app.include_router(reviews.router)

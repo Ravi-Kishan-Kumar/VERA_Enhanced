@@ -43,8 +43,8 @@ class ModelArtifactsMissingError(RuntimeError):
         )
         super().__init__(
             f"{len(missing)} required model artifact(s) missing in {model_dir}:\n{details}\n"
-            "Run the Colab notebooks and upload the files to HF_MODEL_REPO, "
-            "or copy them into MODEL_DIR."
+            "Run notebooks 04 (Colab) and 05-06 (local), then upload the files to "
+            "HF_MODEL_REPO or copy them into MODEL_DIR."
         )
 
 

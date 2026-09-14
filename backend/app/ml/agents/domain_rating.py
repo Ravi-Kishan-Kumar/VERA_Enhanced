@@ -16,6 +16,7 @@ from typing import Any
 
 import joblib
 import numpy as np
+import sklearn
 
 from app.ml.constants import SCORE_MAX, SCORE_MIN
 
@@ -24,9 +25,21 @@ class DomainRatingModel:
     """Agent 6: text -> implied rating from domain vocabulary."""
 
     def __init__(self, model_path: str | Path) -> None:
-        artifacts = joblib.load(model_path)
+        try:
+            artifacts = joblib.load(model_path)
+        except ModuleNotFoundError as exc:  # e.g. "numpy._core" from a numpy-2 pickle
+            raise ValueError(
+                f"{model_path} was pickled with incompatible library versions ({exc}). "
+                "Retrain it in the production-pinned .venv (see notebooks/05)."
+            ) from exc
         if not {"vectorizer", "model"} <= set(artifacts):
             raise ValueError(f"{model_path} must contain 'vectorizer' and 'model'")
+        trained_with = artifacts.get("sklearn_version")
+        if trained_with is not None and trained_with != sklearn.__version__:
+            raise ValueError(
+                f"{model_path} trained with scikit-learn {trained_with}, runtime has "
+                f"{sklearn.__version__}; retrain with the pinned version."
+            )
         self.vectorizer = artifacts["vectorizer"]
         self.model = artifacts["model"]
 
