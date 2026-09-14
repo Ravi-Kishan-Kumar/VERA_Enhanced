@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Methodology" };
+export const metadata = pageMetadata("Methodology", "How VERA combines review signals, aspect sentiment, and honest uncertainty, with transparent model limitations.", "/about");
 
 export default function AboutPage() {
   return (
@@ -29,7 +29,7 @@ export default function AboutPage() {
             <li><strong>Aspect sentiment</strong> — ten earbud aspects (sound, bass, battery, comfort, fit, build, connectivity, microphone, noise cancellation, value).</li>
             <li><strong>Consistency</strong> — measures how far the star is from the text.</li>
             <li><strong>Review quality</strong> — helpful votes, verified purchase, freshness, and length become a trust weight. Missing details are filled with training averages.</li>
-            <li><strong>Domain rating</strong> — a text model trained on over a hundred thousand unlabelled earbud reviews.</li>
+            <li><strong>Domain rating</strong> — a text model that learns rating patterns from earbud reviews.</li>
             <li><strong>Fusion</strong> — a 20-model XGBoost ensemble combines all signals into the corrected score.</li>
           </ol>
         </section>

@@ -7,6 +7,11 @@ prediction adds a 90% interval, and Empirical Bayes shrinkage ranks products fai
 - **Specification:** [PRD.md](PRD.md) (v1.2 corrections in §23)
 - **Why things are built this way:** [DECISIONS.md](DECISIONS.md)
 - **Current status / next steps:** [PROGRESS.md](PROGRESS.md), [HANDOFF.md](HANDOFF.md)
+- **Deployment:** [Production guide](docs/deployment.md), [HF Docker Space package](deploy/huggingface-space/README.md)
+- **Operations and evidence:** [Runbook](docs/operations.md), [Model card](docs/model_card.md), [Codex session notes](docs/codex_notes.md)
+
+During Claude's live training round, follow the freeze in `CODEX_TASKS_ROUND2.md`.
+The guides below contain reference commands, not permission to start duplicate training or deployment.
 
 ```
 backend/     FastAPI API, Celery worker, ML pipeline (production — no torch)

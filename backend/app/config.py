@@ -8,6 +8,7 @@ convenience.
 from __future__ import annotations
 
 from functools import lru_cache
+from ipaddress import ip_network
 from pathlib import Path
 from typing import Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -67,6 +68,19 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["development", "test", "production"] = "development"
     SECRET_KEY: str = ""
     CORS_ORIGINS: str = "http://localhost:3000"
+    REVIEW_RATE_LIMIT: int = Field(default=10, ge=1, le=10000)
+    REVIEW_RATE_WINDOW_SECONDS: int = Field(default=60, ge=1, le=86400)
+    RATE_LIMIT_MAX_CLIENTS: int = Field(default=10000, ge=1, le=100000)
+    MAX_REQUEST_BODY_BYTES: int = Field(default=65536, ge=1024, le=1048576)
+    TRUSTED_PROXY_CIDRS: str = ""
+
+    @field_validator("TRUSTED_PROXY_CIDRS")
+    @classmethod
+    def _trusted_proxies(cls, value: str) -> str:
+        for network in value.split(","):
+            if network.strip():
+                ip_network(network.strip(), strict=False)
+        return value.strip()
 
     # --- Models -----------------------------------------------------------------
     MODEL_DIR: Path = Path("data/models")

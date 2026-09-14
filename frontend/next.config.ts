@@ -8,8 +8,13 @@ if (!["http:", "https:"].includes(backend.protocol) || backend.username || backe
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // Bound prerender concurrency on the shared development/training machine.
+  experimental: { cpus: 1 },
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${backend.origin}/api/:path*` }];
+    return [
+      { source: "/api/ready", destination: `${backend.origin}/ready` },
+      { source: "/api/:path*", destination: `${backend.origin}/api/:path*` },
+    ];
   },
   async headers() {
     return [{ source: "/:path*", headers: [

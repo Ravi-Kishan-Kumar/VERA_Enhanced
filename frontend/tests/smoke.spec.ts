@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+// Never contact the shared API/worker during UI tests; individual tests override fixtures.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/**", (route) => route.fulfill({
+    status: new URL(route.request().url()).pathname === "/api/ready" ? 200 : 501,
+    contentType: "application/json",
+    body: JSON.stringify({ status: "ready", database: true }),
+  }));
+});
+
 test("analyzer, rankings, and methodology routes render their real states", async ({ page }) => {
   await page.route("**/api/products?**", (route) =>
     route.fulfill({ status: 200, headers: { "X-Total-Count": "0" }, contentType: "application/json", body: "[]" }),
@@ -19,6 +28,7 @@ test("analyzer, rankings, and methodology routes render their real states", asyn
 });
 
 test("the analyzer fits a narrow mobile viewport without horizontal page overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/");
   await expect(page.getByLabel("Review text")).toBeVisible();
   const dimensions = await page.evaluate(() => ({
@@ -116,4 +126,82 @@ test("a failed next-page request preserves the product and reviews already loade
   await expect(page.getByRole("heading", { name: "Fixture earbuds" })).toBeVisible();
   await expect(page.getByText(/Saved review 1:/)).toBeVisible();
   await expect(page.getByText("20 / 21")).toBeVisible();
+});
+
+test("rate limiting preserves input and waits for Retry-After without auto-resubmitting", async ({ page }) => {
+  let submissions = 0;
+  await page.route("**/api/reviews", (route) => {
+    submissions += 1;
+    return route.fulfill({ status: 429, headers: { "Retry-After": "2", "X-Request-ID": "test-rate-limit" }, contentType: "application/json", body: JSON.stringify({ detail: "internal detail must not replace safe copy" }) });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mixed experience" }).click();
+  const text = await page.getByLabel("Review text").inputValue();
+  await page.getByRole("button", { name: "Analyze experience" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("Too many requests");
+  await expect(page.getByRole("button", { name: /Try again in/ })).toBeDisabled();
+  await expect(page.getByLabel("Review text")).toHaveValue(text);
+  await expect(page.getByRole("button", { name: "Analyze experience" })).toBeEnabled({ timeout: 5000 });
+  expect(submissions).toBe(1);
+});
+
+test("unavailable readiness preserves a draft and recovers through an explicit retry", async ({ page }) => {
+  let available = false;
+  let submissions = 0;
+  await page.route("**/api/ready", (route) => route.fulfill({ status: available ? 200 : 503, contentType: "application/json", body: JSON.stringify({ status: available ? "ready" : "unavailable", database: available }) }));
+  await page.route("**/api/reviews", (route) => { submissions += 1; return route.abort(); });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Positive detail" }).click();
+  const draft = await page.getByLabel("Review text").inputValue();
+  await expect(page.getByRole("complementary", { name: "Service availability" })).toContainText("temporarily unavailable");
+  await page.getByRole("button", { name: "Analyze experience" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("temporarily unavailable");
+  expect(submissions).toBe(0);
+  await expect(page.getByLabel("Review text")).toHaveValue(draft);
+  available = true;
+  await page.getByRole("button", { name: "Retry connection" }).click();
+  await expect(page.getByRole("complementary", { name: "Service availability" })).toHaveCount(0);
+  await expect(page.getByLabel("Review text")).toHaveValue(draft);
+});
+
+test("keyboard navigation, reduced motion, and metadata work without a backend", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main")).toBeFocused();
+  expect(await page.locator(".page-enter").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Beyond the star rating");
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  await page.getByRole("navigation").getByRole("link", { name: "Methodology" }).click();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Methodology" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page).toHaveTitle("Methodology | VERA");
+  const robots = await page.request.get("/robots.txt");
+  expect(await robots.text()).toContain("Disallow: /api/");
+  const sitemap = await page.request.get("/sitemap.xml");
+  expect(await sitemap.text()).toContain("/products</loc>");
+});
+
+test("completed analysis focuses its result and keeps chart alternatives readable", async ({ page }) => {
+  await page.route("**/api/reviews", (route) => route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ review_id: 42, status: "pending" }) }));
+  await page.route("**/api/reviews/42", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+    id: 42, status: "done", star_rating: 5, corrected_score: 3.2, interval_lower: 2.8, interval_upper: 3.6,
+    confidence_value: 0.8, star_text_gap: 1.8, review_quality: 0.7, aspects: null, flags: {},
+    explanation: "Mixed listening experience in this test fixture.", product_asin: null,
+  }) }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mixed experience" }).click();
+  await page.getByRole("button", { name: "Analyze experience" }).click();
+  await expect(page.locator(".score-card")).toBeVisible();
+  await expect(page.locator(".analysis-output")).toBeFocused();
+  await expect(page.getByText("Mixed listening experience in this test fixture.")).toBeVisible();
+});
+
+test("home visual snapshot", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Go beyond the stars." })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Service availability" })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("home.png"), fullPage: true, animations: "disabled" });
 });

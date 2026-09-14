@@ -16,9 +16,8 @@ os.environ["REDIS_URL"] = "redis://localhost:6379/15"
 os.environ["MODEL_DIR"] = "data/models-test"
 os.environ["ENVIRONMENT"] = "test"
 
-import app.models  # Register ORM metadata.
 from app.database import Base, SessionLocal, engine
-from app.main import app
+from app.main import create_app
 
 
 @pytest.fixture(autouse=True)
@@ -41,5 +40,5 @@ def db() -> Generator[Session, None, None]:
 
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
-    with TestClient(app) as test_client:
+    with TestClient(create_app()) as test_client:
         yield test_client

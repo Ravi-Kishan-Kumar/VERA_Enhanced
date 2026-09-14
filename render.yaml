@@ -18,7 +18,7 @@ services:
     plan: free
     buildCommand: pip install -r backend/requirements.txt
     startCommand: sh backend/scripts/start_web_with_worker.sh
-    healthCheckPath: /health
+    healthCheckPath: /ready    # database readiness; does not certify model/worker readiness
     autoDeploy: false          # deployed by .github/workflows/deploy.yml after CI passes
     envVars:
       - key: PYTHON_VERSION
