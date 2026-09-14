@@ -26,10 +26,13 @@ the last label-status snapshot is stale and must not be reused as current status
   `human_validated` is false. The live report was not rewritten.
 - Verification: full pytest 54 passed; frontend lint/typecheck/build passed; Playwright 8/8 passed
   for desktop and mobile.
-- The complete Ruff/Black/mypy suite is not green: Ruff/Black report formatting findings in
-  training-side files, and mypy reports two existing typing errors in `training/vera_training/labeling.py`.
-  No active labeling/training files were reformatted. Get user approval before editing the protected
-  training modules listed above.
+- Ruff and Black pass on the current workspace. Mypy reports two typing errors in
+  `training/vera_training/labeling.py`. Get user approval before editing the protected training
+  modules listed above; coordinate before changing any code Claude may have imported.
+- Formatter-only, uncommitted workspace diffs are present in `training/scripts/agreement_preview.py`,
+  `training/scripts/run_labeling.py`, `training/scripts/smoke_finetune.py`,
+  `training/scripts/train_all.py`, and `training/vera_training/export.py`. They were not included in
+  Codex's commits; preserve them until their owner/user confirms they are safe to include.
 
 ## 3. Modeling and evaluation status
 
