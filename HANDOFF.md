@@ -1,43 +1,60 @@
-# Handoff to the next implementation session
+# Handoff to the next VERA engineer
 
-## Completed in this session
+> Branch: `feat/training-and-release`. Codex did not push or create deployment resources.
+> Read `PROGRESS.md`, `DECISIONS.md` (newest entries win), PRD §23, `README.md`, and
+> `CODEX_PROMPT.md` before continuing.
 
-- Completed the production backend core: ML pipeline wiring, Pydantic contracts,
-  FastAPI routes, Celery tasks, Alembic migration, and focused tests.
-- Workers hard-fail on absent model artifacts; the API remains live and reports
-  artifact availability through `/health`.
-- Fixed the product foreign-key insertion path by creating a product shell before
-  its first review is persisted.
-- Fixed EB aggregation to fit one population prior and publish coherent rankings
-  under a global Redis lock. One-review products now use conservative variance.
-- Added and applied the PRD/decision-log corrections.
+## 1. Important ownership boundary
 
-## Verification completed
+Claude is running labeling and `train_all.py` in its own session and owns the GPU, `data/`, and
+`reports/`. Do not run any labeling/training script, `train_all.py`, or a command that stops Python
+processes. Do not change active label checkpoints, model files, or report outputs. Do not edit
+`training/vera_training/{finetune,signals,fusion,calibration,evaluation,export}.py` or
+`training/scripts/train_all.py` without asking the user first. Coordinate with Claude for live status;
+the last label-status snapshot is stale and must not be reused as current status.
 
-```powershell
-cd backend
-..\.venv\Scripts\python.exe -m pytest tests -v
-..\.venv\Scripts\python.exe -m alembic upgrade head
-cd ..
-.\.venv\Scripts\python.exe -m ruff check backend
-.\.venv\Scripts\python.exe -m black --check backend
-.\.venv\Scripts\python.exe -m mypy backend/app
-```
+## 2. What is implemented and checked
 
-All 10 tests pass; lint, formatting, type checking, and a clean migration pass.
+- Backend submission is transactional through the `jobs` outbox; a broker outage leaves durable
+  work for the dispatcher. Concurrent first submissions for one ASIN now recover from a unique-key
+  race without losing the review. Product rankings/details are paginated and covered by API tests.
+- Frontend analyzer, rankings, product details, methodology, responsive layout, and smoke tests are
+  implemented. The About page explicitly distinguishes Claude reference agreement from human
+  validation.
+- New agreement reports write `reference_agreement`. The compatibility reader accepts the legacy
+  `human_agreement` name only when metadata unambiguously identifies a non-human annotator and
+  `human_validated` is false. The live report was not rewritten.
+- Verification: full pytest 54 passed; frontend lint/typecheck/build passed; Playwright 8/8 passed
+  for desktop and mobile.
+- The complete Ruff/Black/mypy suite is not green: Ruff/Black report formatting findings in
+  training-side files, and mypy reports two existing typing errors in `training/vera_training/labeling.py`.
+  No active labeling/training files were reformatted. Get user approval before editing the protected
+  training modules listed above.
 
-## Exact next steps
+## 3. Modeling and evaluation status
 
-1. Build `training/vera_training` and notebooks 01–08, using the production
-   feature/artifact contracts already in `backend/app/ml`.
-2. Obtain labels and train/upload all eight artifacts listed by
-   `app.ml.models.loader.REQUIRED_ARTIFACTS`; workers intentionally cannot run
-   until they exist.
-3. Implement frontend, deployment files, CI/CD, and README after the artifacts
-   and backend API contract are exercised end to end.
+G1 was generated before this handoff and its live artifact was left untouched. Its reference
+annotations are Claude-generated, not human; `human_validated` must remain false. Do not present the
+legacy `human_agreement` field as human evidence. Regenerate a corrected report only after Claude
+confirms the relevant label inputs are frozen and the user lifts the no-report-access boundary.
 
-## Environment
+G2/G3/G4 and complete-artifact worker readiness were not verified in this Codex session. The user
+has explicitly reserved training and reports for Claude, so the next engineer must wait for release
+before reading those outputs or launching any pipeline step. Once authorized, check the relevant
+`reports/*.json` artifacts and the model loader; report every model metric only from a report file.
 
-- Use `.venv\Scripts\python.exe` (Python 3.12), not system Python 3.14.
-- Add actual Supabase and Upstash credentials to a gitignored `.env` before
-  running the API or worker outside the test suite.
+## 4. Remaining steps, in order
+
+1. Keep clear of Claude's active labeling/training work and ask for its live status when needed.
+2. After the user explicitly authorizes access, confirm data/report artifacts are stable; verify
+   G2/G3/G4 and the 8-artifact loader check from on-disk evidence. Do not lower any gate.
+3. With complete artifacts available and without competing with an active GPU run, verify the
+   local migration/API/worker flow and Docker image. Do not submit external or production reviews.
+4. Get explicit user approval for a deployment target before creating resources. The FP32 worker
+   needs at least 2 GiB as a starting allocation and a peak-RSS check; the 512 MB Render free tier is
+   not a production target. The current `render.yaml` is not a verified production deployment.
+5. Refresh `PROGRESS.md` and this file after the next authorized verification. Never add metrics
+   without their source report.
+
+`.env`, `data/`, `reports/`, and model artifacts remain uncommitted. Do not push or open a PR unless
+the user asks.

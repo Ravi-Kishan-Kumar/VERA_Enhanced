@@ -1,5 +1,5 @@
 # VERA — Verified Experience & Review Analyzer
-## Product Requirements Document (PRD) v1.0
+## Product Requirements Document (PRD) v1.2
 > **Author:** Rakshak S (Loki) · **Status:** APPROVED FOR BUILD · **Date:** September 2026
 
 ---
@@ -28,6 +28,7 @@
 20. [Phased Roadmap](#20-phased-roadmap)
 21. [Weakness Resolution Matrix](#21-weakness-resolution-matrix)
 22. [Success Criteria](#22-success-criteria)
+23. [Implementation Corrections (v1.2)](#23-implementation-corrections-v12)
 
 ---
 
@@ -175,6 +176,8 @@ bradlc.vscode-tailwindcss     # Tailwind IntelliSense
 
 ### 4.4 Python Environment Setup
 
+> **v1.1 correction:** Python **3.12 only**. MAPIE moved to dev requirements; `pydantic-settings` + `huggingface_hub` added to production; test extras in `backend/requirements-test.txt`. `LightTokenizer` loads the local `tokenizer.json` shipped with each ONNX model and pads dynamically — see `backend/app/ml/models/tokenizer_wrapper.py`. (§23 #1–3)
+
 > **Critical separation:** `requirements.txt` is the **production** file — no
 > PyTorch, no `transformers`.  Loading either library in the Render worker
 > consumes ~350 MB before a single model is touched, which overflows the
@@ -280,6 +283,8 @@ with `LightTokenizer(...)` using the same model name.
 
 ### 4.5 Node.js / Frontend Setup
 
+> **v1.1 correction:** Frontend runs Next.js 16 / React 19 with TypeScript 6.0.3 and ESLint 9; components are hand-written (no shadcn/d3). (§23 #25)
+
 ```bash
 # Install Node 20 (use nvm for easy version management)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
@@ -332,6 +337,8 @@ docker pull redis:7-alpine
 
 ### 4.7 Environment Variables
 
+> **v1.1 correction:** Supabase: use the *Session pooler* URI (direct host is IPv6-only). `CELERY_*` URLs may be blank (they default to `REDIS_URL`; `${VAR}` interpolation is not supported). New: `HF_MODEL_REPO`, `MODEL_DIR`, `GEMINI_MODEL`. Canonical list: `.env.example`.
+
 Create `.env` in project root. **Never commit this file.**
 
 ```bash
@@ -363,6 +370,8 @@ CELERY_RESULT_BACKEND=${REDIS_URL}
 ---
 
 ## 5. Repository Structure
+
+> **v1.1 correction:** Additions: `training/vera_training/` (tested offline package), `backend/app/models/job.py` + migration `002_jobs_outbox.py`, `backend/app/worker/outbox.py`, `backend/app/ml/features.py`, `notebooks/build_notebooks.py`, `render.yaml`, `backend/scripts/start_web_with_worker.sh`. Pages add `/about`; components add `ProductDetail.tsx`.
 
 ```
 vera/
@@ -595,6 +604,8 @@ The labels WE generate, from scratch, using Gemini 1.5 Flash. Experience score 1
 
 ### 6.3 Sampling Strategy for Labeling Pool
 
+> **v1.1 correction:** The per-product cap is enforced GLOBALLY across star buckets (the sketch capped per bucket, allowing 25 reviews/product). Implementation: `vera_training.data.sample_for_labeling`.
+
 We need 2,000 labels but have 144,000 reviews. How we sample matters a lot for class imbalance and model generalization:
 
 ```python
@@ -637,17 +648,17 @@ labeling_pool = sample_for_labeling(earbud_reviews_df)
 
 ## 7. Labeling Protocol — Gemini Flash
 
-### 7.1 Why Gemini 1.5 Flash, Not Humans
+### 7.1 Labeler Selection and Validation
 
-| | Human (MTurk) | GPT-4o | Gemini Flash |
-|---|---|---|---|
-| Cost per label | ~$0.50 | ~$0.05 | **Free (1M tok/day)** |
-| Throughput | Slow | Fast | **Very fast** |
-| Agreement w/ humans | ~0.72 kappa | ~0.57 kappa | ~0.55 kappa |
-| Systematic bias | Low | Possible | Possible |
-| Scale to 2000 labels | Expensive | Cheap | **Free** |
+> **v1.2 correction:** The current labeling configuration uses Groq-hosted
+> `openai/gpt-oss-120b` and `qwen/qwen3.8-27b`; Gemini is legacy support, not the active
+> provider. Claude's annotations are a non-human reference only. No human-model agreement
+> result may be claimed until human annotations are actually collected. (§23 #22, #27)
 
-Gemini Flash is free at our scale and good enough. We measure and report its reliability honestly. We validate 200 samples against human annotation to get a kappa baseline.
+Label reliability is assessed with independent repeat runs and reference agreement. Agreement with
+an LLM reference is reported as reference-model agreement, not human validation. The G1 thresholds
+remain unchanged; the human-model criterion in §22.1 stays unmet until genuine human annotations
+are collected.
 
 ### 7.2 The Labeling Prompt (Exact, No Changes)
 
@@ -688,6 +699,8 @@ Return a JSON object with this exact schema:
 ```
 
 ### 7.3 Labeling Script
+
+> **v1.1 correction:** Use `vera_training.labeling.run_labels`: star-blinded, strict schema validation, hard request budget, atomic resumable checkpoints (the sketch overwrote its checkpoint every 100 rows and never saved the final batch).
 
 ```python
 # notebooks/02_label_generation.ipynb
@@ -932,6 +945,8 @@ flowchart TD
 
 ### Agent 1: Text Preprocessor
 
+> **v1.1 correction:** `has_url` is computed on RAW text (it was always False after URL stripping); `<br/>` becomes a space; keywords match on word boundaries. (§23 #6)
+
 **Purpose:** Gate all downstream agents with clean, validated input. Detect contamination (non-earbud products), language, and compute text quality metrics that inform later agents.
 
 **Why it's first:** Garbage in → garbage out. Every downstream signal depends on clean text. Contamination detection here prevents non-earbud products from polluting our scores.
@@ -1060,6 +1075,8 @@ class TextPreprocessor:
 
 ### Agent 2: Experience Extractor
 
+> **v1.1 correction:** No `transformers` import in production; inference and training both use `format_experience_input(clean_text)` (the sketch prepended the title only at inference). ONNX feeds only declared inputs (no `token_type_ids` for DeBERTa-v3). (§23 #4, #7)
+
 **Purpose:** Estimate the actual experience score from text alone. This is our primary model — fine-tuned DeBERTa-v3-base with a regression head, trained on our 2000 Gemini-labeled reviews.
 
 **Why DeBERTa-v3-base:** Disentangled attention mechanism captures both content and position independently, outperforming BERT and RoBERTa on sentiment tasks. Base size (184M params) fits in memory after ONNX quantization.
@@ -1132,6 +1149,8 @@ class ExperienceExtractor:
 ---
 
 ### Agent 3: ABSA Module
+
+> **v1.1 correction:** Single batched ONNX call; numerically stable softmax; label map from exported `absa_config.json`; aspect keys are snake_case (`sound_quality`) everywhere. (§23 #8)
 
 **Purpose:** Detect which of the 10 earbud aspects are mentioned and classify sentiment for each. Uses the pre-trained `yangheng/deberta-v3-base-absa-v1.1` (180K training examples) directly — no fine-tuning needed.
 
@@ -1285,6 +1304,8 @@ class ConsistencyScorer:
 
 ### Agent 5: Review Quality Assessor
 
+> **v1.1 correction:** Composite is a plain weighted average (the sketch referenced `quality_score` in its own definition); freshness uses a true half-life `0.5**(age/730)` clipped at age 0; missing metadata imputed from training means in the fusion artifact. (§23 #9)
+
 **Purpose:** Estimate how trustworthy this review is as a signal. High-quality reviews get more weight in the product aggregation step.
 
 **Inputs:** Metadata (helpful_votes, verified_purchase, timestamp, word_count)
@@ -1344,6 +1365,8 @@ class QualityAssessor:
 ---
 
 ### Agent 6: Domain Rating Model
+
+> **v1.1 correction:** Training lives in `vera_training.domain.train_domain_model`; excludes ALL labelled ASINs; drops `stop_words_`; artifact `domain_tfidf.joblib` records sklearn/numpy versions and must be trained in the production-pinned env. (§23 #19)
 
 **Purpose:** A TF-IDF model trained on ALL 144K unlabeled earbud reviews that predicts an implied rating from text alone — without ever seeing the star. This captures domain-specific vocabulary patterns (e.g., "tinny" always correlates with low experience scores in our domain).
 
@@ -1436,6 +1459,8 @@ See §10 for full details. This agent takes all signals from Agents 1–6 and pr
 ## 10. Fusion & Calibration Layer
 
 ### 10.1 Feature Engineering
+
+> **v1.1 correction:** The 40-feature contract lives in `backend/app/ml/features.py` and is shared by training and serving. Imputation happens inside Agent 5 (the sketch's `imputation` argument was never used). Training uses 50% metadata dropout; calibration/test use 100% to match API inputs. (§23 #10, #18)
 
 **Feature shift problem and mitigation.**
 API users submit reviews without `helpful_votes` or `verified_purchase` — those fields are optional in `ReviewCreate` and default to `0` / `False`.  If your XGBoost model was trained exclusively on high-quality, heavily-voted reviews (e.g. because you over-sampled them for labelling), the `quality_score` and `helpfulness_score` features will be systematically smaller in production than in training.  When conformal calibration is fitted on training-distribution features but production inputs carry different feature distributions, intervals widen or narrow incorrectly.
@@ -1532,6 +1557,8 @@ def build_feature_vector(agent_outputs: dict, imputation: dict = None) -> np.nda
 
 ### 10.2 XGBoost Bootstrap Ensemble
 
+> **v1.1 correction:** `eval_set=[(X, y)]` removed (it evaluated on training data). Inverse-frequency sample weights implement the promised class weighting. Saved as portable JSON `fusion_ensemble.json`, not a pickle. Fusion features use OUT-OF-FOLD Agent 2 scores. (§23 #11, #17)
+
 ```python
 # notebooks/05_train_fusion.ipynb
 
@@ -1603,6 +1630,8 @@ def ensemble_predict(members, X):
 ```
 
 ### 10.3 Split Conformal Calibration
+
+> **v1.1 correction:** Quantile is the ⌈(n+1)(1−α)⌉-th smallest score (`np.quantile` at `(1−α)(1+1/n)` interpolates and fails when the level exceeds 1). Normalized scores `|y−ŷ|/(σ_ens+floor)` are supported so confidence varies per review. §13.3's `ConformalCalibrator` never existed: use `vera_training.calibration`. (§23 #12)
 
 **Why conformal prediction:** It gives a mathematically guaranteed coverage interval. If we say "90% interval," we can empirically verify that 90% of held-out reviews actually fall inside the interval. No other calibration method gives this guarantee without distributional assumptions.
 
@@ -1734,6 +1763,8 @@ than a spuriously tiny pooled variance.
 
 ### 11.2 Implementation
 
+> **v1.1 correction:** τ² is the BETWEEN-product variance (method of moments), not the variance of all review scores; weighted means use the Kish effective n; single-review products use the pooled within-product variance; uncertainty is the posterior sd `sqrt(B·τ²)`. All products are re-aggregated together so the prior and ranks stay consistent. (§23 #13–14)
+
 ```python
 # backend/app/ml/calibration/empirical_bayes.py
 
@@ -1848,6 +1879,8 @@ urllib.request.urlretrieve(
 
 ### 12.2 Fine-tuning DeBERTa-v3-base (Notebook 04)
 
+> **v1.1 correction:** Use `vera_training.finetune`: 5 product-grouped cross-fitted models produce out-of-fold scores, then a final model on all labels. `evaluation_strategy` → `eval_strategy`; dynamic padding. (§23 #17)
+
 ```python
 # notebooks/04_finetune_experience.ipynb
 # Run on Colab T4 GPU (free) — takes ~45 minutes
@@ -1949,6 +1982,8 @@ tokenizer.push_to_hub('YOUR_HF_USERNAME/vera-experience-deberta')
 
 ### 12.3 ONNX Export + INT8 Quantization
 
+> **v1.1 correction:** `onnxruntime.quantization.quantize_dynamic` replaces the AVX-512-VNNI-specific config. G2 parity is checked PyTorch vs FP32 ONNX through the production tokenizer; INT8 drift is reported separately. Artifact names: see `app.ml.models.loader.REQUIRED_ARTIFACTS`.
+
 ```python
 # Run AFTER fine-tuning
 
@@ -1999,6 +2034,8 @@ api.upload_file(
 **Non-negotiable rule:** Every number reported must come from the evaluation protocol below. No single-split numbers. No cherry-picked holdouts.
 
 ### 13.1 Cross-Validation Design
+
+> **v1.1 correction:** `RepeatedGroupKFold` does not exist in scikit-learn. Implemented as 5 product-grouped folds × 3 repeats = 15 folds in `vera_training.splits.repeated_group_folds`. (§23 #20)
 
 ```mermaid
 flowchart LR
@@ -2139,6 +2176,8 @@ sequenceDiagram
 ```
 
 ### 14.2 FastAPI Routes
+
+> **v1.1 correction:** Routes are sync `def` (sync SQLAlchemy inside `async def` blocks the event loop). Submission writes review + `jobs` row in one transaction and never returns 503 on broker outage. Products listing hides unscored shells, adds `star_average`/`rank_position` sorts and `X-Total-Count`; detail paginates reviews. (§23 #15–16)
 
 ```python
 # backend/app/api/routes/reviews.py
@@ -2303,6 +2342,8 @@ celery_app.conf.update(
 
 ### 14.5 Celery Tasks
 
+> **v1.1 correction:** Replaced by a transactional outbox: `vera.run_job(job_id)` executes review/aggregate jobs with durable retries in the DB; the sketch loaded models at import in the API process, crashed on a missing review, and marked reviews `failed` while still retrying. (§23 #15)
+
 ```python
 # backend/app/worker/tasks.py
 
@@ -2428,6 +2469,8 @@ def aggregate_product_task(self, product_asin: str):
 ---
 
 ## 15. Database Schema
+
+> **v1.1 correction:** `reviews.product_asin` FK kept; a product shell is created before the first review (the v1.0 flow violated the FK). New columns: reviews `flags`, `explanation`, `error_message` (metadata columns nullable = "not supplied"); products `star_average`, `previous_rank_position`, `created_at`; calibration `method`. New table `jobs` (migration 002). (§23 #16)
 
 ```mermaid
 erDiagram
@@ -2656,6 +2699,11 @@ const itemVariants = {
 
 ### 17.1 Render Setup (Backend)
 
+> **v1.2 correction:** No Render database (Supabase is the DB). The free 512 MB service is not
+> suitable for the FP32 model worker. Do not deploy the current Render blueprint as production;
+> select a user-approved runtime with sufficient memory, verify peak RSS with complete artifacts,
+> and run migrations at startup. (§23 #23, #28)
+
 ```yaml
 # render.yaml (in repo root)
 services:
@@ -2701,6 +2749,8 @@ databases:
 
 ### 17.2 Vercel Setup (Frontend)
 
+> **v1.1 correction:** The frontend proxy reads server-side `API_URL` (not a `NEXT_PUBLIC_` variable).
+
 ```bash
 # In frontend/ directory
 vercel
@@ -2724,6 +2774,8 @@ module.exports = {
 ```
 
 ### 17.3 Model Loading at Startup
+
+> **v1.1 correction:** Artifacts download into `MODEL_DIR`; the worker exits if any is missing (no fallback). CLI: `cd backend && python -m app.ml.models.loader [--check]`.
 
 ```python
 # backend/app/ml/models/loader.py
@@ -2765,16 +2817,18 @@ ensure_models()
 
 | Resource | Budget | Usage |
 |---|---|---|
-| Render RAM | 512 MB | 90MB exp model + 90MB ABSA + 50MB TF-IDF + 150MB runtime = ~380MB ✓ |
+| Backend RAM | ≥ 2 GiB starting allocation | FP32 worker requirement; verify peak RSS with the complete artifact set before deployment (§23 #28) |
 | Render CPU | 0.1 vCPU shared | Async via Celery, latency target 5–10s per review |
 | Supabase DB | 500 MB | ~10K reviews × 5KB/review = 50MB ✓ |
 | Upstash Redis | 10K cmds/day | ~5 cmds/review → 2,000 reviews/day ✓ |
-| Gemini Flash | 1M tokens/day | 2000 labels × ~500 tokens = 1M total (one-time) ✓ |
+| Label provider | Organization/model quotas apply | Current labeling uses configured Groq providers; quota and throughput are not a fixed product budget |
 | Vercel | Unlimited hobby | Static + SSR, no compute limits for our scale ✓ |
 
 ---
 
 ## 18. CI/CD Pipeline
+
+> **v1.1 correction:** CI installs `requirements-lint.txt` + `requirements-test.txt` (the v1.0 job ran ruff/black/mypy without installing them), runs the migration round-trip and frontend `lint`/`typecheck`/`build`. `deploy.yml` reuses CI, then triggers the Render deploy hook and Vercel. (§23 #24)
 
 ```mermaid
 flowchart LR
@@ -3050,6 +3104,12 @@ Every known weakness has a concrete mitigation. Nothing is hand-waved.
 
 ### 22.1 Academic Criteria (Must All Pass)
 
+The human-model agreement criterion below is **not met**: the available reference
+annotations were produced by an LLM, not a human. Agreement with Claude may be
+reported separately as reference-model agreement, but is not a substitute for
+human validation. `human_validated` must remain `false` unless real human
+annotations are collected and evaluated.
+
 - [ ] VERA beats stars-only baseline (Wilcoxon p < 0.05) on 15-fold repeated product-grouped CV
 - [ ] Reported MAE: mean ± std across folds, NOT a single-split number
 - [ ] Fold win rate: VERA > stars-only in ≥ 85% of folds
@@ -3061,6 +3121,9 @@ Every known weakness has a concrete mitigation. Nothing is hand-waved.
 - [ ] Negative results reported: if a component doesn't help, the paper says so
 
 ### 22.2 Production Criteria (Must All Pass)
+
+Creating or deploying production resources requires explicit user approval. The current deployment
+criteria are not verified; the backend target must first meet the FP32 worker's memory requirement.
 
 - [ ] `/health` endpoint returns 200 always
 - [ ] Review submission returns result in < 30 seconds (p95)
@@ -3079,6 +3142,46 @@ Every known weakness has a concrete mitigation. Nothing is hand-waved.
 - [ ] Star vs corrected score comparison is visually compelling (animation works)
 - [ ] Aspect radar renders with correct sentiment colors
 - [ ] UI works on mobile (responsive)
+
+---
+
+## 23. Implementation Corrections (v1.2)
+
+Bugs, measured constraints, and implementation deviations found while building. Some gates still
+depend on trained artifacts or an approved deployment target; rationale is in `DECISIONS.md`.
+Where this table conflicts with earlier sections, **this table wins**.
+
+| # | Area | v1.0 problem | v1.1 resolution |
+|---|---|---|---|
+| 1 | Environment | Pins (numpy 1.26.4, onnxruntime 1.19.0) have no wheels for Python ≥ 3.13 | Python 3.12 only |
+| 2 | Requirements | MAPIE installed in production despite §10.3 | Moved to `requirements-dev.txt` |
+| 3 | Tokenizer | `Tokenizer.from_pretrained` needs network and base DeBERTa has no `tokenizer.json`; fixed 512 padding; hardcoded pad id | Local `tokenizer.json`, dynamic padding, pad id from vocab, `only_first` pair truncation |
+| 4 | ONNX feed | `token_type_ids` passed to graphs that do not declare it → onnxruntime error | Feed only declared inputs |
+| 5 | Worker boot | `VERAPipeline()` at import time also loaded models inside the API | Lazy per-worker load; worker exits if artifacts missing |
+| 6 | Agent 1 | `has_url` always False; `<br/>` glued words; substring keyword hits ("anc" in "balance") | Raw-text URL check, break tags → space, word boundaries |
+| 7 | Agent 2 | Title prepended at inference only (train/serve skew) | Shared `format_experience_input` |
+| 8 | Agent 3 | Softmax overflow; 10 separate ONNX calls; hardcoded label order | Stable softmax, one batch, `absa_config.json` |
+| 9 | Agent 5 | Self-referencing formula; wrong half-life; freshness > 1 for future dates; hardcoded imputation | Weighted average, `0.5**(age/730)`, clip, means from artifact |
+| 10 | Features | `imputation` argument unused | Imputation in Agent 5; features shared via `app/ml/features.py` |
+| 11 | Fusion | `eval_set` on training data; pickle artifact | Removed; JSON artifact with feature-name check |
+| 12 | Conformal | Interpolated / invalid quantile; constant-width intervals | Exact finite-sample rank; normalized method |
+| 13 | EB prior | τ² = variance of all review scores | Method-of-moments between-product variance |
+| 14 | EB uncertainty | Ad-hoc formula; τ² used as σ² for n = 1 | Posterior sd; pooled within-product variance |
+| 15 | Tasks | Commit-then-enqueue could lose jobs; `failed` set while retrying; `review` may be None | Transactional outbox (`jobs`), durable retries, dispatcher thread |
+| 16 | Schema | FK violation on first review of a new ASIN | Product shell created on submit |
+| 17 | Leakage | Fusion trained on in-sample Agent 2 predictions | 5-fold product-grouped cross-fitting (out-of-fold scores) |
+| 18 | Feature shift | Calibration metadata ≠ API metadata | Metadata dropout 0.5 (train) / 1.0 (calibration, test) |
+| 19 | Domain model | Only test ASINs excluded; `stop_words_` bloat; numpy-2 pickles unloadable | Exclude all labelled ASINs; drop attribute; train in pinned env, version check |
+| 20 | CV | `RepeatedGroupKFold` does not exist | 5 × 3 custom product-grouped folds |
+| 21 | Corpus prep | Running langdetect on ~200K reviews (~1 h) just to clean text | `TextPreprocessor.clean_text` |
+| 22 | Labeling | Gemini 1.5 Flash retired; current label runs use Groq | Current provider/model configuration is Groq (`gpt-oss-120b` + Qwen); Gemini remains legacy support only |
+| 23 | Render | Render DB contradicts Supabase; free workers do not exist | Supabase remains the DB; free 512 MB Render plan is not suitable for the FP32 worker; deployment target requires user approval |
+| 24 | CI | Lint tools not installed; `npm run type-check` script missing | Installed; `typecheck`; migration round-trip |
+| 25 | Frontend | Next 14 end-of-life; shadcn CLI targets newer stacks | Next 16 / React 19, TS 6, ESLint 9, custom components |
+| 26 | Upstash budget | 2 s polling = ~43K commands/day per worker > 10K free quota | Single worker, results ignored; expect paid Upstash or local Redis for sustained use |
+| 27 | Label validation | The original protocol requires human-model agreement, but no human annotations were obtained | The 200 blinded reference annotations are Claude-generated and are explicitly non-human (`human_validated: false`). Agreement with this reference is a separate diagnostic and cannot satisfy the human-model criterion in §22.1. | Keep the human-model criterion unmet until genuine human annotations exist; do not present LLM-reference agreement as human validation. |
+| 28 | Runtime memory | PRD assumes quantized models fit a 512 MB Render service | Quantized DeBERTa failed the export gate; production uses FP32 artifacts. A worker deployment requires at least 2 GiB as a starting allocation and a measured peak-RSS check. The 512 MB free Render plan is not a production target. | Verify with the complete artifact set before selecting a deployment target. Deployment resources require explicit user approval. |
+| 29 | Agreement report schema | The legacy `human_agreement` field could describe agreement with a non-human reference | Name reference comparisons `reference_agreement`; keep `human_validated: false`. Legacy reports must not be relabeled as human evidence. | Regenerate reports from frozen checkpoint inputs when schema changes; never edit active labeling checkpoints to update report wording. |
 
 ---
 
@@ -3151,4 +3254,4 @@ CELERY_RESULT_BACKEND=${REDIS_URL}
 
 *This PRD is the single source of truth for VERA. Every code file, notebook, and design decision traces back to a section here. When in doubt, re-read the relevant section. When something is wrong, update this document first.*
 
-**Last updated:** 2026-09-13 | **Version:** 1.0.0 | **Status:** APPROVED FOR BUILD
+**Last updated:** 2026-09-14 | **Version:** 1.2.0 | **Status:** IN BUILD — see §23 for corrections
