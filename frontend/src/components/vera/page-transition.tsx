@@ -1,22 +1,8 @@
 "use client"
 
-import { motion, useReducedMotion } from "motion/react"
 import { usePathname } from "next/navigation"
-
-import { EASE_OUT, motionDuration } from "@/lib/motion"
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const reduced = useReducedMotion()
-
-  return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0, y: reduced ? 0 : 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduced ? motionDuration.hover : motionDuration.ui, ease: EASE_OUT }}
-    >
-      {children}
-    </motion.div>
-  )
+  return <div key={pathname} className="animate-in fade-in slide-in-from-bottom-1 duration-200 motion-reduce:animate-none">{children}</div>
 }
