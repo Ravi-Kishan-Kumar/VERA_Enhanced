@@ -29,6 +29,9 @@ the last label-status snapshot is stale and must not be reused as current status
 - Ruff and Black pass on the current workspace. Mypy reports two typing errors in
   `training/vera_training/labeling.py`. Get user approval before editing the protected training
   modules listed above; coordinate before changing any code Claude may have imported.
+- `git diff --check` flagged trailing whitespace inside the exact labeling system-prompt string.
+  The training lint config preserves that prompt verbatim; do not normalize it without coordinating
+  with Claude because changing it can change the prompt sent to labelers.
 - Formatter-only, uncommitted workspace diffs are present in `training/scripts/agreement_preview.py`,
   `training/scripts/label_status.py`, `training/scripts/run_labeling.py`, `training/scripts/smoke_finetune.py`,
   `training/scripts/train_all.py`, and `training/vera_training/export.py`. They were not included in

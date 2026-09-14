@@ -22,6 +22,8 @@ runtime checks, and deployment are not verified by this Codex session.
 - [x] Ruff and Black pass on the current workspace.
 - [ ] Resolve the two mypy typing errors in `training/vera_training/labeling.py` only after
   confirming with Claude that changing the active labeling module is safe.
+- [ ] `git diff --check` flags trailing whitespace inside the exact labeling system-prompt string;
+  preserve it unless Claude approves a prompt change and its downstream effects are evaluated.
 - [ ] After Claude releases ownership and the user authorizes it, verify trained-model gates
   G2/G3/G4 using the corresponding files under `reports/` and run the full-artifact loader check.
 - [ ] Verify the local Docker/API/worker flow when complete model artifacts are available.
