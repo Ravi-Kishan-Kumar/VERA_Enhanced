@@ -1,0 +1,4 @@
+# Shell scripts run on Linux (Render, Docker) — never check them out with CRLF.
+*.sh text eol=lf
+*.py text eol=lf
+*.ipynb text eol=lf

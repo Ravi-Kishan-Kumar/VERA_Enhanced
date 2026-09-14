@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call: # reused by deploy.yml on pushes to main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:///./ci.db
+      REDIS_URL: redis://localhost:6379/0
+      ENVIRONMENT: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt \
+                      -r backend/requirements-lint.txt \
+                      -r backend/requirements-test.txt
+
+      - name: Lint
+        run: |
+          ruff check backend training
+          black --check backend training
+
+      - name: Type check
+        run: mypy backend/app training/vera_training
+
+      - name: Test
+        run: pytest -v --tb=short
+
+      - name: Migrations apply cleanly from scratch (and roll back)
+        working-directory: backend
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: No torch/transformers in production requirements
+        run: "! grep -Ei '^(torch|transformers|mapie)' backend/requirements.txt"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          API_URL: http://127.0.0.1:8000

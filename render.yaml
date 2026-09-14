@@ -1,0 +1,62 @@
+# Render Blueprint (PRD §17.1). Database = Supabase, Redis = Upstash (set as secrets).
+#
+# Deviations from the PRD blueprint (see DECISIONS.md):
+# * No Render-managed database: the PRD's `fromDatabase: vera-db` contradicted the
+#   Supabase architecture and Render's free Postgres expires.
+# * Render background workers are paid. The checked-in `free` service below is a
+#   non-production placeholder: the FP32 worker needs at least 2 GiB and cannot
+#   run on Render's 512 MB free tier. Do not deploy it as production. After the
+#   user approves a target, configure an adequately sized service and verify RSS.
+#   For a dedicated worker, set `startCommand` of vera-api to plain uvicorn and
+#   uncomment `vera-worker` only after the target's memory has been checked.
+# * Migrations run at start (not build) so they always target the live DATABASE_URL.
+services:
+  - type: web
+    name: vera-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: sh backend/scripts/start_web_with_worker.sh
+    healthCheckPath: /health
+    autoDeploy: false          # deployed by .github/workflows/deploy.yml after CI passes
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: production
+      - key: MODEL_DIR
+        value: /opt/render/project/src/data/models
+      - key: DATABASE_URL        # Supabase session-pooler URI
+        sync: false
+      - key: REDIS_URL           # Upstash rediss:// URI
+        sync: false
+      - key: HF_MODEL_REPO
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: CORS_ORIGINS        # e.g. https://your-app.vercel.app
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+
+  # --- Paid plan: dedicated worker (then change vera-api startCommand to
+  #     `cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`)
+  # - type: worker
+  #   name: vera-worker
+  #   runtime: python
+  #   region: oregon
+  #   plan: starter
+  #   buildCommand: pip install -r backend/requirements.txt
+  #   startCommand: cd backend && celery -A app.worker.celery_app worker --loglevel=info
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: 3.12.7
+  #     - key: DATABASE_URL
+  #       sync: false
+  #     - key: REDIS_URL
+  #       sync: false
+  #     - key: HF_MODEL_REPO
+  #       sync: false
+  #     - key: HF_TOKEN
+  #       sync: false

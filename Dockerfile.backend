@@ -1,0 +1,35 @@
+# VERA backend image — FastAPI API and Celery worker share it (different commands).
+#   docker build -f Dockerfile.backend -t vera-backend .
+#   API:    docker run -p 8000:8000 --env-file .env vera-backend
+#   Worker: docker run --env-file .env -v ./data/models:/app/data/models vera-backend \
+#             celery -A app.worker.celery_app worker --loglevel=info
+FROM python:3.12-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    MODEL_DIR=/app/data/models \
+    PORT=8000
+
+# libgomp: OpenMP runtime required by xgboost / onnxruntime wheels.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY backend/requirements.txt backend/requirements.txt
+RUN pip install -r backend/requirements.txt
+
+COPY backend/ backend/
+RUN useradd --create-home --uid 10001 vera \
+    && mkdir -p /app/data/models \
+    && chown -R vera:vera /app
+USER vera
+WORKDIR /app/backend
+
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\", \"8000\")}/health', timeout=4)"
+
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers"]
