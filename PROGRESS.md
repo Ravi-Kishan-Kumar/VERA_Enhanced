@@ -35,7 +35,7 @@ until the user explicitly lifts this boundary. The last label-status snapshot is
 for live status instead of relying on the previous handoff.
 
 There are formatter-only, uncommitted workspace diffs in `training/scripts/agreement_preview.py`,
-`training/scripts/run_labeling.py`, `training/scripts/smoke_finetune.py`,
+`training/scripts/label_status.py`, `training/scripts/run_labeling.py`, `training/scripts/smoke_finetune.py`,
 `training/scripts/train_all.py`, and `training/vera_training/export.py`. They were left unstaged;
 preserve them, especially the two protected pipeline files, until their owner/user confirms they
 are safe to include.
