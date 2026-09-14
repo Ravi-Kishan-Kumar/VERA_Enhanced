@@ -3,7 +3,8 @@
     .venv\\Scripts\\python.exe training\\scripts\\train_all.py --stages all
     .venv\\Scripts\\python.exe training\\scripts\\train_all.py --stages fusion,calibrate
 
-Stages (in order): labels, crossfit, final, domain, fusion, calibrate, evaluate, report.
+Stages (in order): labels, crossfit, final, domain, aspects, fusion, calibrate, evaluate, report,
+diagnostics.
 A stage whose output already exists is skipped unless --force is given.
 """
 
@@ -30,7 +31,18 @@ from vera_training import paths  # noqa: E402
 from vera_training.io import atomic_json, validate_reviews  # noqa: E402
 from vera_training.labeling import ExperienceLabel  # noqa: E402
 
-STAGES = ("labels", "crossfit", "final", "domain", "fusion", "calibrate", "evaluate", "report")
+STAGES = (
+    "labels",
+    "crossfit",
+    "final",
+    "domain",
+    "aspects",
+    "fusion",
+    "calibrate",
+    "evaluate",
+    "report",
+    "diagnostics",
+)
 FINAL_DIR = paths.PROCESSED / "final_model"
 CROSSFIT_DIR = paths.PROCESSED / "crossfit"
 
@@ -72,8 +84,10 @@ def stage_labels(run_ids: list[str], allow_non_human: bool) -> None:
         labels[review_id] = base
     frame = pool[pool.review_id.isin(labels)].copy()
     label_frame = pd.DataFrame([{"review_id": k, **v} for k, v in labels.items()])
-    log(f"label sources: {models}; consensus rows: "
-        f"{sum(v['label_models'] > 1 for v in labels.values())}/{len(labels)}")
+    log(
+        f"label sources: {models}; consensus rows: "
+        f"{sum(v['label_models'] > 1 for v in labels.values())}/{len(labels)}"
+    )
     merged = validate_reviews(
         frame.merge(label_frame, on="review_id", validate="one_to_one"), labels=True
     )
@@ -129,6 +143,47 @@ def stage_domain() -> None:
     log(f"domain model: {report}")
 
 
+SPLITS_FILE = paths.LABELS / "splits.json"
+ASPECT_OOF_FILE = paths.LABELS / "aspect_oof_mentions.json"
+
+
+def load_split_assignment(labelled: pd.DataFrame) -> dict[str, str]:
+    """``review_id -> train|calibration|test``, created once per label set and then reused.
+
+    Every stage (aspects, fusion, calibration, evaluation) must see the SAME split;
+    persisting it removes any dependence on row order.
+    """
+    from vera_training import splits
+
+    if SPLITS_FILE.exists():
+        assignment: dict[str, str] = json.loads(SPLITS_FILE.read_text(encoding="utf-8"))
+        if set(assignment) == set(labelled.review_id):
+            return assignment
+        log("labels changed since splits.json was written; regenerating splits")
+    parts = splits.train_cal_test(labelled, seed=42)
+    assignment = {rid: name for name, frame in parts.items() for rid in frame.review_id}
+    atomic_json(SPLITS_FILE, assignment)
+    return assignment
+
+
+def stage_aspects() -> None:
+    from vera_training.aspects import fit_aspect_detector
+
+    labelled = load_labelled()
+    assignment = load_split_assignment(labelled)
+    test_mask = labelled.review_id.map(assignment).eq("test").to_numpy()
+    report = fit_aspect_detector(labelled, test_mask, paths.MODELS / "aspect_detector.joblib")
+    atomic_json(ASPECT_OOF_FILE, report.pop("oof_mentions"))
+    atomic_json(paths.REPORTS / "aspect_detector.json", report)
+    table = pd.DataFrame(report["per_aspect"])
+    log("aspect detector (test split):\n" + table.to_string(index=False))
+    log(
+        f"macro F1 {report['test_macro_f1']} vs keywords-only "
+        f"{report['test_macro_f1_keywords_only']}; "
+        f"all >= 0.70: {report['all_aspects_at_least_0_70']}"
+    )
+
+
 def stage_fusion() -> None:
     from app.ml.agents.absa import ABSAModule
     from app.ml.agents.consistency import ConsistencyScorer
@@ -136,13 +191,18 @@ def stage_fusion() -> None:
     from app.ml.agents.preprocessor import TextPreprocessor
     from app.ml.agents.quality import QualityAssessor
     from app.ml.pipeline import SignalAgents
-    from vera_training import signals, splits
-    from vera_training.fusion import BootstrapEnsemble
+    from vera_training import signals
+    from vera_training.fusion import BootstrapEnsemble, tune_fusion_params
 
     labelled = load_labelled()
     oof = pd.read_csv(paths.EXPERIENCE_OOF, dtype={"review_id": str})
     labelled = labelled.merge(oof, on="review_id", validate="one_to_one")
-    parts = splits.train_cal_test(labelled, seed=42)
+    assignment = load_split_assignment(labelled)
+    parts = {
+        name: labelled[labelled.review_id.map(assignment).eq(name)].reset_index(drop=True)
+        for name in ("train", "calibration", "test")
+    }
+    aspect_oof: dict[str, dict[str, bool]] = json.loads(ASPECT_OOF_FILE.read_text(encoding="utf-8"))
     means = signals.imputation_means(parts["train"])
     agents = SignalAgents(
         preprocessor=TextPreprocessor(),
@@ -165,6 +225,7 @@ def stage_fusion() -> None:
             frame.experience_raw.to_numpy(),
             metadata_dropout=0.5 if name == "train" else 1.0,
             seed=42,
+            aspect_mentions=[aspect_oof[rid] for rid in frame.review_id],
         )
         matrices[name] = {
             "X": X,
@@ -174,21 +235,39 @@ def stage_fusion() -> None:
         }
         log(f"features[{name}] {X.shape} in {time.time() - started:.0f}s")
     X_all, _ = signals.feature_matrix(
-        labelled, agents, labelled.experience_raw.to_numpy(), metadata_dropout=0.5, seed=7
+        labelled,
+        agents,
+        labelled.experience_raw.to_numpy(),
+        metadata_dropout=0.5,
+        seed=7,
+        aspect_mentions=[aspect_oof[rid] for rid in labelled.review_id],
     )
     matrices["all"] = {"X": X_all, "y": labelled.experience_score.to_numpy(), "frame": labelled}
 
-    ensemble = BootstrapEnsemble(n_members=20, seed=42).fit(
+    # Capacity chosen by product-grouped CV on the TRAIN split only (see fusion.tune_fusion_params).
+    tuning = tune_fusion_params(
+        matrices["train"]["X"], matrices["train"]["y"], parts["train"].parent_asin.tolist()
+    )
+    atomic_json(paths.REPORTS / "fusion_tuning.json", tuning)
+    log(f"fusion tuning chose {tuning['chosen']}")
+    ensemble = BootstrapEnsemble(n_members=20, seed=42, params=tuning["params"]).fit(
         matrices["train"]["X"], matrices["train"]["y"]
     )
     ensemble.save(
         paths.MODELS / "fusion_ensemble.json",
         means,
-        metadata={"n_train": len(parts["train"]), "labels": len(labelled)},
+        metadata={
+            "n_train": len(parts["train"]),
+            "labels": len(labelled),
+            "params": tuning["params"],
+        },
     )
-    joblib.dump({"matrices": matrices, "imputation_means": means}, paths.FUSION_CACHE)
-    summary = {}
-    for split in ("calibration", "test"):
+    joblib.dump(
+        {"matrices": matrices, "imputation_means": means, "fusion_params": tuning["params"]},
+        paths.FUSION_CACHE,
+    )
+    summary: dict[str, dict[str, float]] = {}
+    for split in ("train", "calibration", "test"):
         pred = ensemble.predict(matrices[split]["X"])
         summary[split] = {
             "vera_mae": float(np.abs(pred - matrices[split]["y"]).mean()),
@@ -247,15 +326,30 @@ def stage_evaluate() -> None:
     from vera_training import evaluation
     from vera_training.fusion import BootstrapEnsemble
 
-    data = joblib.load(paths.FUSION_CACHE)["matrices"]["all"]
+    cache = joblib.load(paths.FUSION_CACHE)
+    data, params = cache["matrices"]["all"], cache["fusion_params"]
     X, y, groups = data["X"], data["y"], data["frame"].parent_asin.tolist()
     baseline = evaluation.cross_validated_mae(X[:, :1], y, groups, Ridge)
-    vera = evaluation.cross_validated_mae(X, y, groups, lambda: BootstrapEnsemble(n_members=20))
+    # Nested CV: hyperparameters are re-tuned inside every outer training fold.
+    vera, folds = evaluation.nested_cross_validated_mae(X, y, groups, n_members=20)
     comparison = evaluation.paired_comparison(baseline, vera)
+    gaps = [f["gap"] for f in folds]
+    comparison["nested_tuning"] = True
+    comparison["mean_train_mae"] = float(np.mean([f["train_mae"] for f in folds]))
+    comparison["mean_generalization_gap"] = float(np.mean(gaps))
+    comparison["fold_details"] = folds
     comparison["fold_maes"] = {"stars_only": baseline.tolist(), "vera": vera.tolist()}
     atomic_json(paths.REPORTS / "cv_comparison.json", comparison)
-    log(f"CV: {json.dumps({k: v for k, v in comparison.items() if k != 'fold_maes'})}")
-    table = evaluation.ablation_study(X, y, groups, lambda: BootstrapEnsemble(n_members=5))
+    log(
+        "CV: "
+        + json.dumps(
+            {k: v for k, v in comparison.items() if k not in ("fold_maes", "fold_details")}
+        )
+    )
+    # Ablation compares feature groups under the train-split-tuned capacity.
+    table = evaluation.ablation_study(
+        X, y, groups, lambda: BootstrapEnsemble(n_members=10, params=params)
+    )
     table.to_csv(paths.REPORTS / "ablation.csv", index=False)
     log("ablation:\n" + table.to_string())
 
@@ -308,16 +402,63 @@ def stage_report() -> None:
     log("aspects:\n" + aspects.to_string())
 
 
+def stage_diagnostics() -> None:
+    """Over/underfitting evidence: per-split quality metrics and a learning curve."""
+    from vera_training import evaluation
+
+    cache = joblib.load(paths.FUSION_CACHE)
+    matrices, params = cache["matrices"], cache["fusion_params"]
+    quality = subprocess_quality_report()
+    curve = evaluation.learning_curve(
+        matrices["train"]["X"],
+        matrices["train"]["y"],
+        matrices["train"]["frame"].parent_asin.tolist(),
+        matrices["calibration"]["X"],
+        matrices["calibration"]["y"],
+        params,
+    )
+    report = {
+        "quality": quality,
+        "learning_curve_train_vs_calibration": curve,
+        "interpretation": {
+            "final_gap_calibration_minus_train": round(
+                curve[-1]["validation_mae"] - curve[-1]["train_mae"], 4
+            ),
+            "validation_improvement_last_step": round(
+                curve[-2]["validation_mae"] - curve[-1]["validation_mae"], 4
+            ),
+        },
+    }
+    atomic_json(paths.REPORTS / "diagnostics.json", report)
+    log("learning curve:\n" + pd.DataFrame(curve).to_string(index=False))
+
+
+def subprocess_quality_report() -> dict[str, Any]:
+    """Run ``model_quality_report.py`` logic in-process and return its JSON."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "model_quality_report", ROOT / "training" / "scripts" / "model_quality_report.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.main()
+    return json.loads((paths.REPORTS / "model_quality.json").read_text(encoding="utf-8"))
+
+
 # ---------------------------------------------------------------------------- main
 OUTPUTS = {
     "labels": paths.LABELS_V1,
     "crossfit": paths.EXPERIENCE_OOF,
     "final": paths.MODELS / "experience_model.onnx",
     "domain": paths.MODELS / "domain_tfidf.joblib",
+    "aspects": paths.MODELS / "aspect_detector.joblib",
     "fusion": paths.FUSION_CACHE,
     "calibrate": paths.MODELS / "conformal_qhat.json",
     "evaluate": paths.REPORTS / "cv_comparison.json",
     "report": paths.REPORTS / "evaluation_report.json",
+    "diagnostics": paths.REPORTS / "diagnostics.json",
 }
 
 
@@ -351,7 +492,9 @@ def main() -> None:
         else:
             {
                 "domain": stage_domain,
+                "aspects": stage_aspects,
                 "fusion": stage_fusion,
+                "diagnostics": stage_diagnostics,
                 "calibrate": stage_calibrate,
                 "evaluate": stage_evaluate,
                 "report": stage_report,

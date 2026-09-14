@@ -1,0 +1,9 @@
+{
+  "n_train": 575540,
+  "n_validation": 24460,
+  "n_excluded_labelled_product_rows": 1195717,
+  "vocabulary_size": 50000,
+  "train_r2": 0.7232061080646247,
+  "validation_r2": 0.7043245332435332,
+  "validation_mae_vs_stars": 0.608445019455884
+}

@@ -6,7 +6,7 @@ import "./globals.css";
 import { DotPattern } from "@/components/ui/dot-pattern"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { ServiceStatus } from "@/components/ServiceStatus";
+import { ServiceStatus } from "@/components/vera/service-status"
 import { Navigation } from "@/components/vera/navigation"
 import { ThemeProvider } from "@/components/vera/theme-provider"
 import { pageMetadata, siteUrl } from "@/lib/metadata";

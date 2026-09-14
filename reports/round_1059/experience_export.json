@@ -1,0 +1,21 @@
+{
+  "n": 32,
+  "fp32_max_abs_diff": 2.86102294921875e-06,
+  "int8_max_abs_diff": 0.8187756538391113,
+  "int8_mean_abs_diff": 0.265251025557518,
+  "g2_passed": true,
+  "max_length": 384,
+  "int8_size_mb": 539.6,
+  "fp32_size_mb": 738.6,
+  "deployed_precision": "fp32",
+  "deployed_size_mb": 738.6,
+  "validation": {
+    "eval_loss": 0.2789410948753357,
+    "eval_mae": 0.3551720678806305,
+    "eval_runtime": 3.8635,
+    "eval_samples_per_second": 40.896,
+    "eval_steps_per_second": 5.177,
+    "epoch": 5.0
+  },
+  "g2_val_mae_below_0_50": true
+}

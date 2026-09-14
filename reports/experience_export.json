@@ -1,0 +1,17 @@
+{
+  "n": 32,
+  "fp32_max_abs_diff": 1.9073486328125e-06,
+  "int8_max_abs_diff": 1.4885759353637695,
+  "int8_mean_abs_diff": 0.27795436419546604,
+  "g2_passed": true,
+  "max_length": 512,
+  "int8_size_mb": 539.6,
+  "fp32_size_mb": 738.6,
+  "deployed_precision": "fp32",
+  "deployed_size_mb": 738.6,
+  "validation": {
+    "eval_loss": 0.22339338064193726,
+    "eval_mae": 0.3150339424610138
+  },
+  "g2_val_mae_below_0_50": true
+}

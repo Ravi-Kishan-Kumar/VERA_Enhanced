@@ -24,8 +24,9 @@ def main() -> None:
     reference = set((LABELS / "reference_ids.txt").read_text().split())
     primary, qwen = runs.get("primary-a", set()), runs.get("qwen-a", set())
     print(
-        f"reference covered: primary {len(reference & primary)}/200, qwen {len(reference & qwen)}/200"
-        f" | both models: {len(primary & qwen)} | union: {len(primary | qwen)}"
+        f"reference covered: primary {len(reference & primary)}/200, "
+        f"qwen {len(reference & qwen)}/200 | both models: {len(primary & qwen)} "
+        f"| union: {len(primary | qwen)}"
     )
 
 

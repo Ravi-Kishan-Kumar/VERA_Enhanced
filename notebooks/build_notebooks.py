@@ -264,9 +264,9 @@ models can be compared on **identical product-grouped folds** (`GroupKFold` is d
   `/content` (Files panel) or Drive `MyDrive/vera/`.
 
 **Outputs** (zipped to `/content/vera_colab_outputs.zip` for download, copied to Drive if mounted):
-`experience_oof_colab.csv`, `experience_model_colab.onnx`, `experience_tokenizer_colab.json`,
-`experience_export_colab.json`. Put them in `data/labels/` and `data/models/` locally, then run
-`training/scripts/compare_experience_models.py`.
+`experience_oof_colab.csv` (out-of-fold predictions for the comparison), `final_model_colab/`
+(PyTorch weights + tokenizer, ~750 MB) and `colab_run.json`. Save the zip to
+`C:\\Workspace\\VERA\\colab_results\\`; Claude compares the models and, if Colab wins, exports it locally.
 """),
     code("""
 # --- Environment ------------------------------------------------------------------
@@ -286,13 +286,25 @@ if not ROOT.exists():
                                DRIVE / "vera_colab_bundle.zip"] if p.exists()), None)
     if REPO_URL:
         subprocess.run(["git", "clone", "--depth", "1", REPO_URL, str(ROOT)], check=True)
-    elif bundle is not None:
-        zipfile.ZipFile(bundle).extractall(ROOT)
     else:
-        raise FileNotFoundError("Set REPO_URL or upload vera_colab_bundle.zip to /content")
+        if bundle is None:
+            # No bundle on the server yet: open a file picker (works in browser Colab and the
+            # VS Code Colab extension). Choose C:\\Workspace\\VERA\\dist\\vera_colab_bundle.zip
+            import shutil
+            from google.colab import files
+            print("Select vera_colab_bundle.zip (C:\\\\Workspace\\\\VERA\\\\dist\\\\) in the picker...")
+            uploaded = files.upload()
+            if not uploaded:
+                raise FileNotFoundError("No file uploaded; re-run this cell and choose the zip")
+            bundle = pathlib.Path("/content/vera_colab_bundle.zip")
+            shutil.move(next(iter(uploaded)), bundle)
+        zipfile.ZipFile(bundle).extractall(ROOT)
 
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r",
-                str(ROOT / "training/requirements-colab.txt")], check=True)
+# Colab ships torch, transformers, scikit-learn, pandas and numpy for its own Python version
+# (3.13 as of 2026-09); pinned production versions do not exist there. Only install what is
+# missing, unpinned. The production-compatible ONNX export happens locally, not here.
+subprocess.run([sys.executable, "-m", "pip", "install", "-q",
+                "datasets", "accelerate", "sentencepiece", "protobuf"], check=True)
 os.chdir(ROOT)
 sys.path[:0] = [str(ROOT / "backend"), str(ROOT / "training")]
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
@@ -326,24 +338,28 @@ out = pd.DataFrame({"review_id": labelled.review_id, "experience_raw": oof})
 out.to_csv(OUT / "experience_oof_colab.csv", index=False)
 print("OOF MAE:", float((out.experience_raw.clip(1, 5) - labelled.experience_score).abs().mean()))
 """),
-    md("## Final model + ONNX export with parity check (G2: val MAE < 0.50, FP32 ONNX Δ < 0.01)"),
+    md("""
+## Final model (PyTorch weights; ONNX export happens locally)
+Exporting here would produce an ONNX graph from Colab's library versions. Instead the trained
+weights are zipped; `train_all.py`'s export step converts them locally with the production-pinned
+stack and runs the G2 parity check.
+"""),
     code("""
 import shutil
-from vera_training.export import export_experience
 from vera_training.finetune import train_final
 
 final_dir = WORK / "final" / "model"
 if not (final_dir / "config.json").exists():
     final_dir = train_final(labelled, WORK / "final", config)
 validation = json.loads((final_dir / "vera_training.json").read_text())["validation"]
-export_dir = pathlib.Path("/content/export"); export_dir.mkdir(exist_ok=True)
-report = export_experience(final_dir, export_dir, labelled.sample(32, random_state=0).text.tolist(),
-                           "/content/onnx_work", config.max_length)
-report["validation"] = validation
-shutil.copy(export_dir / "experience_model.onnx", OUT / "experience_model_colab.onnx")
-shutil.copy(export_dir / "experience_tokenizer.json", OUT / "experience_tokenizer_colab.json")
-(OUT / "experience_export_colab.json").write_text(json.dumps(report, indent=2))
-print(json.dumps(report, indent=2))
+print("final model validation:", validation)
+shutil.copytree(final_dir, OUT / "final_model_colab", dirs_exist_ok=True)
+(OUT / "colab_run.json").write_text(json.dumps({
+    "config": {"max_length": config.max_length, "optim": config.optim, "epochs": config.epochs},
+    "validation": validation,
+    "torch": torch.__version__,
+    "python": sys.version.split()[0],
+}, indent=2))
 """),
     code("""
 archive = shutil.make_archive("/content/vera_colab_outputs", "zip", OUT)

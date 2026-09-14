@@ -50,7 +50,9 @@ def label_until_done(*args: Any, pause_seconds: int = 1800) -> None:
         remaining = label(*args)
         if remaining == 0:
             return
-        print(f"{remaining} rows left; quota cooling down, retrying in {pause_seconds}s", flush=True)
+        print(
+            f"{remaining} rows left; quota cooling down, retrying in {pause_seconds}s", flush=True
+        )
         time.sleep(pause_seconds)
 
 

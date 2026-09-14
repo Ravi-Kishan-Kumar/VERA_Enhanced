@@ -1,66 +1,59 @@
-# Handoff to the next VERA engineer
+# Handoff — VERA
 
-> Branch: `feat/training-and-release`. Codex did not push or create deployment resources.
-> Read `PROGRESS.md`, `DECISIONS.md` (newest entries win), PRD §23, `README.md`, and
-> `CODEX_PROMPT.md` before continuing.
+> Written by **Claude**, 2026-09-14 13:50, after training round 1. **Training released**: no GPU job is
+> running and Codex may now read `reports/` and `data/models/` and verify gates. Labeling processes
+> (`primary-a`, `qwen-a`) are still running in Claude's session — do not stop them or edit
+> `data/labels/run_*.json`. Branch `feat/training-and-release`; nothing pushed.
+> Read `PROGRESS.md`, `DECISIONS.md`, `docs/codex_notes.md`, PRD §23.
 
-## 1. Important ownership boundary
+## 1. Round 1 results (1,059 consensus-labeled reviews, 878 products) — snapshot `reports/round_1059/`
+| Metric | Value | Source |
+|---|---|---|
+| G1 label reliability | passed; self κ 0.979, reference κ 0.950 (Claude, **not human**), gpt-oss vs qwen κ 0.947 | `agreement_report.json` |
+| Agent 2 out-of-fold MAE | **0.360** (stars-only regression 0.465, stars-as-prediction 0.495) | `experience_oof.json` |
+| G2 final model | val MAE 0.355 < 0.50; FP32 ONNX parity 2.9e-6; INT8 rejected; max_length 384 | `experience_export.json` |
+| Fusion hold-out test MAE | **0.315** (stars 0.501, experience-only 0.358) | `fusion_holdout.json` |
+| 15-fold product-grouped CV | VERA **0.307 ± 0.015** vs stars-only 0.465 ± 0.022; win 15/15; Wilcoxon p = 3.1e-5 | `cv_comparison.json` |
+| Conformal coverage (test n=214) | 95%→97.2%, 90%→**93.5%**, 80%→82.7% (normalized method) | `calibration.json` |
+| G3 latency (CPU, 10 reviews) | max 6.7 s, mean 1.5 s | `evaluation_report.json` |
+| G4 | **passed** (all checks) | `evaluation_report.json` |
+| Ablation | +experience ✓, +domain ✓, +consistency ✗ (win 27%, no gain), +quality ✓, +absa ✓ | `ablation.csv` |
+| Aspect detection F1 | 7/10 ≥ 0.70; **build_quality 0.54, connectivity 0.66, comfort 0.72 borderline** | `evaluation_report.json` |
 
-Claude is running labeling and `train_all.py` in its own session and owns the GPU, `data/`, and
-`reports/`. Do not run any labeling/training script, `train_all.py`, or a command that stops Python
-processes. Do not change active label checkpoints, model files, or report outputs. Do not edit
-`training/vera_training/{finetune,signals,fusion,calibration,evaluation,export}.py` or
-`training/scripts/train_all.py` without asking the user first. Coordinate with Claude for live status;
-the last label-status snapshot is stale and must not be reused as current status.
+All 8 artifacts present: `cd backend; ..\.venv\Scripts\python.exe -m app.ml.models.loader --check`.
 
-## 2. What is implemented and checked
+## 2. Known gaps (report honestly)
+- PRD §22.1 "aspect detection F1 ≥ 0.70 for all 10 aspects" is **not met** (build_quality, connectivity).
+  Likely cause: keyword recall in `backend/app/ml/constants.py::ASPECT_KEYWORDS`. Fix using the TRAIN
+  split's label mentions (never the test split), then re-run fusion→report (feature contract unchanged).
+- Consistency features give no measurable gain (negative result; keep it in the report).
+- Reference annotations are Claude's, not human → `human_validated=false`.
+- Worker RAM ≈ 1.5 GB+ (two FP32 DeBERTa graphs) → 512 MB hosts cannot run it.
 
-- Backend submission is transactional through the `jobs` outbox; a broker outage leaves durable
-  work for the dispatcher. Concurrent first submissions for one ASIN now recover from a unique-key
-  race without losing the review. Product rankings/details are paginated and covered by API tests.
-- Frontend analyzer, rankings, product details, methodology, responsive layout, and smoke tests are
-  implemented. The About page explicitly distinguishes Claude reference agreement from human
-  validation.
-- New agreement reports write `reference_agreement`. The compatibility reader accepts the legacy
-  `human_agreement` name only when metadata unambiguously identifies a non-human annotator and
-  `human_validated` is false. The live report was not rewritten.
-- Verification: full pytest 54 passed; frontend lint/typecheck/build passed; Playwright 8/8 passed
-  for desktop and mobile.
-- Ruff and Black pass on the current workspace. Mypy reports two typing errors in
-  `training/vera_training/labeling.py`. Get user approval before editing the protected training
-  modules listed above; coordinate before changing any code Claude may have imported.
-- `git diff --check` flagged trailing whitespace inside the exact labeling system-prompt string.
-  The training lint config preserves that prompt verbatim; do not normalize it without coordinating
-  with Claude because changing it can change the prompt sent to labelers.
-- Formatter-only, uncommitted workspace diffs are present in `training/scripts/agreement_preview.py`,
-  `training/scripts/label_status.py`, `training/scripts/run_labeling.py`, `training/scripts/smoke_finetune.py`,
-  `training/scripts/train_all.py`, and `training/vera_training/export.py`. They were not included in
-  Codex's commits; preserve them until their owner/user confirms they are safe to include.
+## 3. Code state notes
+- Ruff, Black, mypy clean; `pytest -q` 54 passed at 11:25 (Claude fixed the two labeling.py mypy errors).
+- The formatter-only diffs in `training/scripts/*`, `training/vera_training/export.py`, `train_all.py`
+  are Claude's and safe to commit.
+- The labeling system prompt's trailing whitespace is intentional (PRD §7.2 verbatim) — do not normalize.
 
-## 3. Modeling and evaluation status
+## 4. Next steps
+1. **Codex (released):** local end-to-end with real scoring (migrate, Redis, API, worker, frontend;
+   submit ≥ 10 test-split reviews with ASINs; measure latency + worker peak RSS); build the Space image;
+   README results section from `reports/round_1059/` (every number linked); commit (not `data/`/`reports/`).
+2. **Claude:** labeling to 2,000 → round 2 retrain; then rows 2000–3999 (`primary-b`/`qwen-b`) → round 3.
+   Before a retrain starts, Claude will re-announce the boundary (GPU, `training/**`, `backend/app/ml/**`).
+3. **User:** `HF_TOKEN` + `HF_MODEL_REPO` in `.env` (artifact upload), Supabase `DATABASE_URL`, GitHub repo,
+   deployment target choice, optional human annotation of `data/labels/claude_annotation_sheet.csv`.
 
-G1 was generated before this handoff and its live artifact was left untouched. Its reference
-annotations are Claude-generated, not human; `human_validated` must remain false. Do not present the
-legacy `human_agreement` field as human evidence. Regenerate a corrected report only after Claude
-confirms the relevant label inputs are frozen and the user lifts the no-report-access boundary.
+## Status 2026-09-14 evening (round 2, paused by user)
 
-G2/G3/G4 and complete-artifact worker readiness were not verified in this Codex session. The user
-has explicitly reserved training and reports for Claude, so the next engineer must wait for release
-before reading those outputs or launching any pipeline step. Once authorized, check the relevant
-`reports/*.json` artifacts and the model loader; report every model metric only from a report file.
-
-## 4. Remaining steps, in order
-
-1. Keep clear of Claude's active labeling/training work and ask for its live status when needed.
-2. After the user explicitly authorizes access, confirm data/report artifacts are stable; verify
-   G2/G3/G4 and the 8-artifact loader check from on-disk evidence. Do not lower any gate.
-3. With complete artifacts available and without competing with an active GPU run, verify the
-   local migration/API/worker flow and Docker image. Do not submit external or production reviews.
-4. Get explicit user approval for a deployment target before creating resources. The FP32 worker
-   needs at least 2 GiB as a starting allocation and a peak-RSS check; the 512 MB Render free tier is
-   not a production target. The current `render.yaml` is not a verified production deployment.
-5. Refresh `PROGRESS.md` and this file after the next authorized verification. Never add metrics
-   without their source report.
-
-`.env`, `data/`, `reports/`, and model artifacts remain uncommitted. Do not push or open a PR unless
-the user asks.
+- Local round-2 crossfit (384 tokens) was stopped during fold 5; the Colab model (512 tokens, AdamW, T4) is used instead.
+  - Colab OOF MAE 0.319 on 2,022 consensus labels (R2 0.884, within +-0.5 80.5%, within +-1 96.5%); stars-as-prediction MAE 0.488.
+  - On the same 1,059 reviews: round-1 local 0.359 vs Colab round-2 0.312. Final-model validation MAE 0.315.
+- Installed: `colab_results/final_model_colab` -> `data/processed/final_model/model`; `experience_oof_colab.csv` -> `data/labels/experience_oof.csv` (round-1 OOF backed up as `experience_oof_round1_local.csv`).
+- Done (`reports/round2_colab.log`):
+  - `final`: FP32 ONNX exported, max abs diff 1.9e-6, deployed fp32. INT8 rejected (max diff 1.49).
+  - `aspects`: test macro F1 0.801 vs 0.786 keywords; all aspects >= 0.70 (build_quality 0.705, connectivity 0.741). 8/10 aspects chose C=8 (grid edge), so widen the C grid.
+- NOT done: fusion was stopped during signal extraction (CPU, ~30 min, no progress log, no partial cache).
+  - Next: add a per-review signal cache/progress log, then run `train_all.py --full-gpu --force --stages fusion,calibrate,evaluate,report,diagnostics`. Do NOT rerun `final` without `--full-gpu` (384 vs 512 max_length).
+- Labeling stopped. primary-a 1981, qwen-a 1997, primary-b 149, qwen-b 210 (union rows 0-1999 = 2000). Restart the `--until-done` daemons for rows 2000-3999.

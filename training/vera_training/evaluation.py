@@ -174,3 +174,99 @@ def gate_g4(comparison: Mapping[str, Any], coverage_90: float) -> dict[str, Any]
         "coverage_at_least_88pct": coverage_90 >= 0.88,
     }
     return {"gate": "G4", "passed": all(checks.values()), "checks": checks}
+
+
+def nested_cross_validated_mae(
+    X: np.ndarray,
+    y: np.ndarray,
+    groups: Sequence[str],
+    *,
+    n_members: int = 20,
+    n_splits: int = 5,
+    n_repeats: int = 3,
+    seed: int = 42,
+    grid: Sequence[dict[str, Any]] | None = None,
+) -> tuple[np.ndarray, list[dict[str, Any]]]:
+    """Per-fold MAE with hyperparameters re-tuned INSIDE every outer training fold.
+
+    Tuning on the whole dataset and then cross-validating would leak the evaluation
+    folds into model selection. Here each outer fold runs
+    :func:`vera_training.fusion.tune_fusion_params` on its own training rows only.
+
+    Returns:
+        ``(fold_maes, fold_details)`` where details include the chosen params and the
+        outer-fold train MAE (for the overfitting gap).
+    """
+    from vera_training.fusion import BootstrapEnsemble, tune_fusion_params
+
+    X, y = np.asarray(X), np.asarray(y, dtype=float)
+    group_array = np.asarray(list(groups))
+    maes: list[float] = []
+    details: list[dict[str, Any]] = []
+    for repeat, fold, train, test in repeated_group_folds(group_array, n_splits, n_repeats, seed):
+        tuned = tune_fusion_params(
+            X[train],
+            y[train],
+            group_array[train].tolist(),
+            seed=seed,
+            **({"grid": grid} if grid is not None else {}),
+        )
+        model = BootstrapEnsemble(n_members=n_members, seed=seed, params=tuned["params"])
+        model.fit(X[train], y[train])
+        test_mae = float(np.mean(np.abs(model.predict(X[test]) - y[test])))
+        train_mae = float(np.mean(np.abs(model.predict(X[train]) - y[train])))
+        maes.append(test_mae)
+        details.append(
+            {
+                "repeat": repeat,
+                "fold": fold,
+                "test_mae": test_mae,
+                "train_mae": train_mae,
+                "gap": test_mae - train_mae,
+                "max_depth": tuned["params"]["max_depth"],
+                "min_child_weight": tuned["params"]["min_child_weight"],
+                "reg_lambda": tuned["params"]["reg_lambda"],
+                "n_estimators": tuned["params"]["n_estimators"],
+            }
+        )
+    return np.asarray(maes), details
+
+
+def learning_curve(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    groups: Sequence[str],
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    params: dict[str, Any],
+    fractions: Sequence[float] = (0.25, 0.5, 0.75, 1.0),
+    n_members: int = 10,
+    seed: int = 42,
+) -> list[dict[str, Any]]:
+    """Train/validation MAE as the number of training PRODUCTS grows.
+
+    Converging curves with a small gap = good fit; a large persistent gap = overfitting;
+    both curves high and flat = underfitting; validation still falling = more data helps.
+    """
+    from vera_training.fusion import BootstrapEnsemble
+
+    X_train, y_train = np.asarray(X_train), np.asarray(y_train, dtype=float)
+    group_array = np.asarray(list(groups))
+    products = np.unique(group_array)
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(products)
+    rows = []
+    for fraction in fractions:
+        keep = set(order[: max(2, int(round(fraction * len(products))))])
+        mask = np.array([g in keep for g in group_array])
+        model = BootstrapEnsemble(n_members=n_members, seed=seed, params=params)
+        model.fit(X_train[mask], y_train[mask])
+        rows.append(
+            {
+                "fraction": fraction,
+                "n_rows": int(mask.sum()),
+                "train_mae": float(np.mean(np.abs(model.predict(X_train[mask]) - y_train[mask]))),
+                "validation_mae": float(np.mean(np.abs(model.predict(X_val) - y_val))),
+            }
+        )
+    return rows

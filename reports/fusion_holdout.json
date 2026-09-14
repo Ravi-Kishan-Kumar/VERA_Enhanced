@@ -1,0 +1,12 @@
+{
+  "calibration": {
+    "vera_mae": 0.31624532921966414,
+    "star_as_prediction_mae": 0.5302690582959642,
+    "experience_only_mae": 0.3883421164457039
+  },
+  "test": {
+    "vera_mae": 0.31499560859715825,
+    "star_as_prediction_mae": 0.5011682242990654,
+    "experience_only_mae": 0.35836081582809165
+  }
+}

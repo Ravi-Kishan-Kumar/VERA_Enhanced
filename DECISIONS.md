@@ -180,3 +180,28 @@ is explicitly identified as `human`. A compatibility reader interprets the legac
 field only when the report explicitly records a non-human annotator and `human_validated: false`.
 **Why:** A field name must not imply human validation when its reference annotations came from an LLM.
 Do not rewrite active reports or checkpoints while Claude owns `data/` and `reports/`.
+
+## 2026-09-14: Fusion capacity tuned by product-grouped CV (fixes overfitting)
+**Decision:** `vera_training.fusion.tune_fusion_params` selects XGBoost depth / min_child_weight /
+L2 by 5-fold product-grouped CV with early stopping on TRAINING rows only, using the one-standard-error
+rule (among configurations within 1 SE of the best validation MAE, prefer the smallest train/validation gap).
+The evaluation stage re-tunes inside every outer fold (nested CV) so model selection never sees its test fold.
+**Why:** Round-1 fusion (fixed depth 6, 300 trees) had train MAE 0.12 vs test 0.315 — memorisation. On the
+same split, tuned capacity (depth 3, min_child_weight 15, 143 trees) gave train 0.247 / test 0.317: equal
+generalisation, gap cut from 0.195 to 0.07, less over-confident member spread.
+
+## 2026-09-14: Learned aspect detector replaces keyword-only mention detection
+**Decision:** New artifact `aspect_detector.joblib` (required): per-aspect logistic regression on word
+1–2-gram TF-IDF + keyword indicators, C and threshold tuned by product-grouped out-of-fold F1 on non-test rows;
+test rows scored by a detector trained on non-test rows only. Fusion features use these out-of-fold / holdout
+decisions. Keyword lists were also fixed (durability terms for build quality; removed "pair"/"range" from
+connectivity).
+**Why:** Keyword detection missed PRD §22.1 (F1 ≥ 0.70 for all aspects): build quality 0.54 (recall 0.35),
+connectivity 0.66 (precision 0.52). Exploratory round-1 test F1 with the learned detector: build quality 0.69,
+connectivity 0.77, comfort 0.82, macro 0.805 (keywords 0.766). More labels (round 2) are expected to lift the
+remaining borderline aspects; results are reported per aspect, including any still below 0.70.
+
+## 2026-09-14: Diagnostics stage (over/underfitting evidence every round)
+**Decision:** `train_all.py --stages diagnostics` writes `reports/model_quality.json` (MAE, RMSE, R²,
+within ±0.5/±1 star for train / calibration / test vs baselines) and a learning curve (train vs calibration MAE
+at 25/50/75/100% of training products) in `reports/diagnostics.json`.

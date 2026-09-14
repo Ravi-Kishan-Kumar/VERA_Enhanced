@@ -1,13 +1,12 @@
 "use client"
 
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react"
-import { motion, useReducedMotion } from "motion/react"
+import { AlertTriangle, ArrowRight, CheckCircle2, Info, Star } from "lucide-react"
 
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { EASE_OUT, motionDuration } from "@/lib/motion"
 import type { Review } from "@/lib/types"
 import { score } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 function scale(value: number) {
   return Math.max(0, Math.min(100, ((value - 1) / 4) * 100))
@@ -23,7 +22,6 @@ function DataLabel({ children, help }: { children: React.ReactNode; help: string
 }
 
 function ConfidenceInterval({ lower, upper, estimate }: { lower: number; upper: number; estimate: number }) {
-  const reduced = useReducedMotion()
   const left = scale(lower)
   const width = Math.max(1, scale(upper) - left)
 
@@ -35,13 +33,11 @@ function ConfidenceInterval({ lower, upper, estimate }: { lower: number; upper: 
       </figcaption>
       <div className="relative h-9" role="img" aria-label={`Corrected score ${score(estimate)}; prediction interval ${score(lower)} to ${score(upper)} on a 1 to 5 scale`}>
         <div className="absolute inset-x-0 top-3 h-2 rounded-full bg-muted" />
-        <motion.div
+        <div
           className="absolute top-2.5 h-3 rounded-full bg-primary/30"
-          initial={reduced ? false : { width: 0 }}
-          animate={{ left: `${left}%`, width: `${width}%` }}
-          transition={{ duration: reduced ? 0 : motionDuration.score, ease: EASE_OUT }}
+          style={{ left: `${left}%`, width: `${width}%` }}
         />
-        <motion.span className="absolute top-1 size-6 -translate-x-1/2 rounded-full border-4 border-background bg-primary shadow-sm" initial={reduced ? false : { left: 0 }} animate={{ left: `${scale(estimate)}%` }} transition={{ duration: reduced ? 0 : motionDuration.score, ease: EASE_OUT }}/>
+        <span className="absolute top-1 size-6 -translate-x-1/2 rounded-full border-4 border-background bg-primary shadow-sm" style={{ left: `${scale(estimate)}%` }}/>
       </div>
       <div aria-hidden="true" className="flex justify-between font-mono text-[11px] text-muted-foreground">{[1, 2, 3, 4, 5].map((value) => <span key={value}>{value}.0</span>)}</div>
     </figure>
@@ -53,7 +49,7 @@ export function ScoreResult({ review }: { review: Review }) {
   const delta = corrected == null ? null : corrected - review.star_rating
 
   return (
-    <section className="rounded-2xl border border-white/60 bg-white/68 p-5 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:ring-white/5 sm:p-7" aria-labelledby={`result-${review.id}`}>
+    <section data-testid="score-result" className="rounded-2xl border border-white/60 bg-white/68 p-5 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:ring-white/5 sm:p-7" aria-labelledby={`result-${review.id}`}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <span className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">Experience signal</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="size-3.5" strokeWidth={1.5}/>Analysis complete</span>
@@ -63,14 +59,15 @@ export function ScoreResult({ review }: { review: Review }) {
         <div>
           <DataLabel help="The rating submitted with the source review.">Original rating</DataLabel>
           <p className="mt-2 font-mono text-4xl font-semibold tracking-[-0.04em] tabular-nums text-muted-foreground">{review.star_rating.toFixed(1)}<span className="text-base font-normal">/5</span></p>
+          <div className="mt-2 flex gap-0.5 text-muted-foreground/35" aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <Star key={index} className={cn("size-4", index < Math.round(review.star_rating) && "fill-current text-muted-foreground")} strokeWidth={1.5}/>)}</div>
         </div>
-        <div className="hidden h-14 w-px bg-border sm:block" aria-hidden="true" />
+        <ArrowRight className="hidden size-5 text-muted-foreground sm:block" strokeWidth={1.5} aria-hidden="true" />
         <div>
           <DataLabel help="VERA's fusion of review text, aspect evidence, quality signals, and uncertainty.">VERA corrected</DataLabel>
           <p className="mt-2 font-mono text-5xl font-semibold tracking-[-0.055em] text-primary tabular-nums">
             {corrected == null ? "—" : <NumberTicker value={corrected} decimalPlaces={2} className="text-primary"/>}<span className="text-base font-normal text-muted-foreground">/5</span>
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">{delta == null ? "Score unavailable" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)} from the original rating`}</p>
+          <p className={cn("mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium", delta == null ? "bg-muted text-muted-foreground" : delta >= 0 ? "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300" : "bg-red-600/10 text-red-700 dark:text-red-300")}>{delta == null ? "Score unavailable" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)} vs rating`}</p>
         </div>
       </div>
       {review.interval_lower != null && review.interval_upper != null && corrected != null && <div className="mt-7"><ConfidenceInterval lower={review.interval_lower} upper={review.interval_upper} estimate={corrected}/></div>}

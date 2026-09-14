@@ -1,0 +1,162 @@
+{
+  "cv_comparison": {
+    "baseline_mae_mean": 0.46481925082843983,
+    "baseline_mae_std": 0.02192038701639335,
+    "candidate_mae_mean": 0.307414291977258,
+    "candidate_mae_std": 0.015011490016251645,
+    "win_rate": 1.0,
+    "wilcoxon_p": 3.0517578125e-05,
+    "n_folds": 15
+  },
+  "test_interval": {
+    "coverage": 0.9345794392523364,
+    "mean_width": 1.241443946577603,
+    "n": 214
+  },
+  "conformal": {
+    "method": "normalized",
+    "alpha": 0.1,
+    "nominal_coverage": 0.9,
+    "sigma_floor": 0.11173062026500702,
+    "q_hat": 2.877139793344714,
+    "empirical_coverage": 0.905829596412556,
+    "mean_width": 1.2590062897581522,
+    "calibration_n": 223,
+    "alternatives": {
+      "absolute": 1.3192715361513898,
+      "normalized": 1.2590062897581522
+    },
+    "test": {
+      "coverage": 0.9345794392523364,
+      "mean_width": 1.241443946577603,
+      "n": 214
+    }
+  },
+  "aspects": [
+    {
+      "aspect": "sound_quality",
+      "support": 145,
+      "detection_f1": 0.9103448275862069,
+      "sentiment_accuracy": 0.7954545454545454,
+      "sentiment_n": 132
+    },
+    {
+      "aspect": "bass",
+      "support": 39,
+      "detection_f1": 0.8421052631578947,
+      "sentiment_accuracy": 0.8125,
+      "sentiment_n": 32
+    },
+    {
+      "aspect": "battery_life",
+      "support": 43,
+      "detection_f1": 0.845360824742268,
+      "sentiment_accuracy": 0.8292682926829268,
+      "sentiment_n": 41
+    },
+    {
+      "aspect": "comfort",
+      "support": 81,
+      "detection_f1": 0.7222222222222222,
+      "sentiment_accuracy": 0.8653846153846154,
+      "sentiment_n": 52
+    },
+    {
+      "aspect": "fit",
+      "support": 78,
+      "detection_f1": 0.7916666666666666,
+      "sentiment_accuracy": 0.9122807017543859,
+      "sentiment_n": 57
+    },
+    {
+      "aspect": "build_quality",
+      "support": 82,
+      "detection_f1": 0.5354330708661418,
+      "sentiment_accuracy": 0.7941176470588235,
+      "sentiment_n": 34
+    },
+    {
+      "aspect": "connectivity",
+      "support": 57,
+      "detection_f1": 0.6583850931677019,
+      "sentiment_accuracy": 0.8113207547169812,
+      "sentiment_n": 53
+    },
+    {
+      "aspect": "microphone",
+      "support": 27,
+      "detection_f1": 0.7142857142857143,
+      "sentiment_accuracy": 0.75,
+      "sentiment_n": 20
+    },
+    {
+      "aspect": "noise_cancellation",
+      "support": 34,
+      "detection_f1": 0.8695652173913043,
+      "sentiment_accuracy": 0.6666666666666666,
+      "sentiment_n": 30
+    },
+    {
+      "aspect": "value",
+      "support": 116,
+      "detection_f1": 0.7745098039215687,
+      "sentiment_accuracy": 0.7848101265822784,
+      "sentiment_n": 79
+    }
+  ],
+  "aspect_f1_all_at_least_0_70": false,
+  "gates": {
+    "G1": {
+      "passed": true,
+      "human_validated": false,
+      "reference_annotator": "claude-opus-5 (LLM, not human)"
+    },
+    "G3": {
+      "gate": "G3",
+      "passed": true,
+      "max_seconds": 6.6994152999832295,
+      "mean_seconds": 1.5361351099971217
+    },
+    "G4": {
+      "gate": "G4",
+      "passed": true,
+      "checks": {
+        "beats_baseline": true,
+        "significant": true,
+        "win_rate_at_least_85pct": true,
+        "coverage_at_least_88pct": true
+      }
+    }
+  },
+  "label_agreement": {
+    "gate": "G1",
+    "passed": true,
+    "human_validated": false,
+    "reference_annotator": "claude-opus-5 (LLM, not human)",
+    "self_consistency": {
+      "n": 200,
+      "kappa": 0.9793112601394343,
+      "mae": 0.0875
+    },
+    "human_agreement": {
+      "n": 200,
+      "kappa": 0.9502276984817488,
+      "mae": 0.2375
+    },
+    "cross_model_agreement": {
+      "model": "qwen/qwen3.8-27b",
+      "n": 191,
+      "kappa": 0.9474023838882039,
+      "mae": 0.2617801047120419
+    },
+    "label_specification": {
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "run_id": "primary-a",
+      "seed": 1,
+      "prompt_hash": "ffc83ff3984c00684e5ba1e8b4dc42a1e3dd8cf92564f1c36b1c639f7c673fe2",
+      "input_hash": "7e00d89e466da7fee62463b561863d1fe059ec3bb08dc3a9bb8cc203863eafd9"
+    },
+    "noise_floor_note": "No human annotations: G1 thresholds were checked against a non-human reference annotator. Do not report this as human-validated."
+  }
+}

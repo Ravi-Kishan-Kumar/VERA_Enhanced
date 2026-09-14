@@ -42,7 +42,11 @@ def compare(name: str, left: dict[str, float], right: dict[str, float]) -> None:
 
 
 def main() -> None:
-    gpt, qwen, repeat = scores("primary-a"), scores("qwen-a", "crossmodel-qwen"), scores("consistency")
+    gpt, qwen, repeat = (
+        scores("primary-a"),
+        scores("qwen-a", "crossmodel-qwen"),
+        scores("consistency"),
+    )
     reference = dict(
         pd.read_csv(paths.LABELS / "reference_annotations_claude.csv", dtype={"review_id": str})
         .astype({"experience_score": float})

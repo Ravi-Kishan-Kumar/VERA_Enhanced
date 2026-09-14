@@ -61,6 +61,7 @@ def feature_matrix(
     *,
     metadata_dropout: float,
     seed: int = 42,
+    aspect_mentions: Sequence[dict[str, bool]] | None = None,
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     """Build ``(X, agent_outputs)`` for every row of ``frame``.
 
@@ -71,16 +72,22 @@ def feature_matrix(
             ``experience`` may be ``None``.
         experience_raw: Out-of-fold raw Agent 2 outputs aligned with ``frame``.
         metadata_dropout: Probability of hiding a row's metadata (0 = never, 1 = always).
+        aspect_mentions: Out-of-fold aspect detector decisions aligned with ``frame``;
+            ``None`` lets Agent 3 detect mentions itself.
     """
     if len(experience_raw) != len(frame):
         raise ValueError("experience_raw must align with frame rows")
+    if aspect_mentions is not None and len(aspect_mentions) != len(frame):
+        raise ValueError("aspect_mentions must align with frame rows")
     if not 0.0 <= metadata_dropout <= 1.0:
         raise ValueError("metadata_dropout must be in [0, 1]")
     rng = np.random.default_rng(seed)
 
     vectors: list[np.ndarray] = []
     outputs: list[dict[str, Any]] = []
-    for row, raw in zip(frame.itertuples(index=False), experience_raw, strict=True):
+    for index, (row, raw) in enumerate(
+        zip(frame.itertuples(index=False), experience_raw, strict=True)
+    ):
         hide = bool(rng.random() < metadata_dropout)
         signals = extract_signals(
             agents,
@@ -93,6 +100,7 @@ def feature_matrix(
             timestamp_ms=None if hide else _optional_int(getattr(row, "timestamp", None)),
             product_title=str(getattr(row, "product_title", "") or ""),
             experience_output=ExperienceExtractor.output_from_raw(float(raw)),
+            aspect_mentions=None if aspect_mentions is None else aspect_mentions[index],
         )
         vectors.append(build_feature_vector(signals))
         outputs.append(signals)

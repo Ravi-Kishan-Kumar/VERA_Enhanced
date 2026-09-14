@@ -1,7 +1,6 @@
 "use client"
 
 import { BookOpen, Code2, Menu, Search } from "lucide-react"
-import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -11,7 +10,6 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTi
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { CommandPalette } from "@/components/vera/command-palette"
 import { ThemeToggle } from "@/components/vera/theme-toggle"
-import { EASE_OUT, motionDuration } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 const links = [
@@ -26,7 +24,6 @@ function isActive(pathname: string, href: string) {
 
 export function Navigation() {
   const pathname = usePathname()
-  const reduced = useReducedMotion()
   const [commandOpen, setCommandOpen] = useState(false)
 
   useEffect(() => {
@@ -53,8 +50,8 @@ export function Navigation() {
             {links.map((link) => {
               const active = isActive(pathname, link.href)
               return (
-                <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={cn("relative flex min-h-9 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-[120ms] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40", active && "text-foreground")}> 
-                  {active && <motion.span layoutId="active-navigation" className="absolute inset-0 rounded-lg bg-background shadow-sm" transition={reduced ? { duration: 0 } : { duration: motionDuration.ui, ease: EASE_OUT }} />}
+                <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={cn("relative flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-[120ms] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40", active && "text-foreground")}> 
+                  {active && <span className="absolute inset-0 rounded-lg bg-background shadow-sm" />}
                   <span className="relative">{link.label}</span>
                 </Link>
               )

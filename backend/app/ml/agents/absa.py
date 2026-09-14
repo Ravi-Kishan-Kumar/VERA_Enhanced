@@ -1,9 +1,10 @@
 """Agent 3 — Aspect-Based Sentiment Analysis (PRD §9, Agent 3).
 
 Uses ``yangheng/deberta-v3-base-absa-v1.1`` exported to ONNX, unchanged (no
-fine-tuning). A word-boundary keyword pre-filter decides which of the 10 earbud
-aspects are mentioned; the model then classifies sentiment for those aspects in
-ONE batched inference call.
+fine-tuning). The learned :class:`~app.ml.agents.aspect_detector.AspectDetector`
+decides which of the 10 earbud aspects are mentioned (keyword matching is the
+fallback when no detector is loaded); the model then classifies sentiment for
+those aspects in ONE batched inference call.
 
 Input format: ``[CLS] review_text [SEP] aspect [SEP]`` — review FIRST, aspect
 SECOND (PRD weakness #4). Only the review is ever truncated.
@@ -13,14 +14,18 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from app.ml.constants import ASPECT_KEYWORDS, ASPECT_PHRASES, EARBUD_ASPECTS
 from app.ml.models.onnx_session import InferenceSessionLike, build_feed, create_session, softmax
 from app.ml.models.tokenizer_wrapper import LightTokenizer
+
+if TYPE_CHECKING:
+    from app.ml.agents.aspect_detector import AspectDetector
 
 _VALID_SENTIMENTS = frozenset({"negative", "neutral", "positive"})
 
@@ -70,10 +75,17 @@ class ABSAModule:
         session: InferenceSessionLike | None = None,
         tokenizer: LightTokenizer | None = None,
         id2label: dict[int, str] | None = None,
+        detector: AspectDetector | None = None,
     ) -> None:
+        """
+        Args:
+            detector: Learned mention detector. Without it, keyword matching decides
+                which aspects are mentioned (test/legacy behaviour).
+        """
         self.id2label = id2label or load_id2label(config_path)
         self.tokenizer = tokenizer or LightTokenizer(tokenizer_path)
         self.session = session or create_session(model_path)
+        self.detector = detector
 
     @staticmethod
     def keyword_detect(text: str, aspect: str) -> bool:
@@ -102,8 +114,22 @@ class ABSAModule:
             }
         return results
 
-    def process(self, clean_text: str) -> dict[str, Any]:
-        """Return ``{"aspects": {aspect_key: result}}`` for all 10 aspects, in canonical order."""
-        detected = [a for a in EARBUD_ASPECTS if self.keyword_detect(clean_text, a)]
+    def mentioned(self, clean_text: str) -> dict[str, bool]:
+        """Which aspects the review mentions: learned detector if loaded, else keywords."""
+        if self.detector is not None:
+            return self.detector.detect(clean_text)
+        return {a: self.keyword_detect(clean_text, a) for a in EARBUD_ASPECTS}
+
+    def process(
+        self, clean_text: str, mentioned: Mapping[str, bool] | None = None
+    ) -> dict[str, Any]:
+        """Return ``{"aspects": {aspect_key: result}}`` for all 10 aspects, in canonical order.
+
+        Args:
+            mentioned: Precomputed mention decisions. Training passes out-of-fold
+                detector decisions here so fusion never sees in-sample detections.
+        """
+        decisions = mentioned if mentioned is not None else self.mentioned(clean_text)
+        detected = [a for a in EARBUD_ASPECTS if decisions.get(a, False)]
         classified = self.classify_aspects(clean_text, detected)
         return {"aspects": {a: classified.get(a, not_mentioned()) for a in EARBUD_ASPECTS}}

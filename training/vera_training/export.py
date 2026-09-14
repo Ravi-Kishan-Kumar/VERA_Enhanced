@@ -128,7 +128,9 @@ def parity_report(
     }
     if reference.shape[1] > 1:
         ref_probs, int8_probs = softmax(reference), softmax(int8_out)
-        report["int8_argmax_agreement"] = float(np.mean(ref_probs.argmax(1) == int8_probs.argmax(1)))
+        report["int8_argmax_agreement"] = float(
+            np.mean(ref_probs.argmax(1) == int8_probs.argmax(1))
+        )
         report["int8_mean_prob_diff"] = float(np.mean(np.abs(ref_probs - int8_probs)))
     report["g2_passed"] = report["fp32_max_abs_diff"] < G2_TOLERANCE
     return report

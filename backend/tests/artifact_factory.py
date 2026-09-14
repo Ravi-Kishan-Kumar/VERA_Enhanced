@@ -71,6 +71,52 @@ def write_onnx(path: Path, n_outputs: int) -> None:
     onnx.save(model, str(path))
 
 
+#: One phrase per aspect (same order as EARBUD_ASPECTS) that trips its keyword list.
+ASPECT_PHRASES_FOR_TESTS = (
+    "the sound quality",
+    "deep bass",
+    "battery life",
+    "comfortable to wear",
+    "they fit well",
+    "cheap plastic broke",
+    "bluetooth connection drops",
+    "the mic on calls",
+    "noise cancellation",
+    "worth the price",
+)
+
+
+def write_aspect_detector(path: Path) -> None:
+    """Tiny real detector: each aspect is 'mentioned' when its phrase appears."""
+    from sklearn.linear_model import LogisticRegression
+
+    from app.ml.agents.aspect_detector import detector_features
+    from app.ml.constants import EARBUD_ASPECTS
+
+    texts, labels = [], []
+    for i in range(len(EARBUD_ASPECTS)):
+        for j in range(len(EARBUD_ASPECTS)):
+            if i != j:
+                texts.append(f"{ASPECT_PHRASES_FOR_TESTS[i]} and {ASPECT_PHRASES_FOR_TESTS[j]}")
+                labels.append([k in (i, j) for k in range(len(EARBUD_ASPECTS))])
+    label_matrix = np.array(labels)
+    vectorizer = TfidfVectorizer().fit(texts)
+    features = detector_features(vectorizer, texts)
+    models = {
+        aspect: LogisticRegression(C=10.0, max_iter=2000).fit(features, label_matrix[:, k])
+        for k, aspect in enumerate(EARBUD_ASPECTS)
+    }
+    joblib.dump(
+        {
+            "vectorizer": vectorizer,
+            "models": models,
+            "thresholds": {aspect: 0.5 for aspect in EARBUD_ASPECTS},
+            "aspects": list(EARBUD_ASPECTS),
+        },
+        path,
+    )
+
+
 def write_all(model_dir: Path, n_members: int = 3) -> None:
     """Write every artifact in ``REQUIRED_ARTIFACTS`` to ``model_dir``."""
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -87,6 +133,8 @@ def write_all(model_dir: Path, n_members: int = 3) -> None:
     vectorizer = TfidfVectorizer().fit(texts)
     ridge = Ridge().fit(vectorizer.transform(texts), [5, 1, 4, 2] * 5)
     joblib.dump({"vectorizer": vectorizer, "model": ridge}, model_dir / "domain_tfidf.joblib")
+
+    write_aspect_detector(model_dir / "aspect_detector.joblib")
 
     rng = np.random.default_rng(0)
     features = rng.normal(size=(60, N_FEATURES)).astype(np.float32)

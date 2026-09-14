@@ -29,7 +29,9 @@ from vera_training.splits import holdout  # noqa: E402
 
 def main() -> None:
     state = json.loads((paths.LABELS / "run_primary-a.json").read_text(encoding="utf-8"))
-    scores = {k: ExperienceLabel.model_validate(v).experience_score for k, v in state["labels"].items()}
+    scores = {
+        k: ExperienceLabel.model_validate(v).experience_score for k, v in state["labels"].items()
+    }
     pool = pd.read_parquet(paths.LABELING_POOL)
     frame = pool[pool.review_id.isin(scores)].copy()
     frame["experience_score"] = frame.review_id.map(scores)
@@ -40,14 +42,21 @@ def main() -> None:
     started = time.time()
     model_dir = train_regressor(train, validation, work, config)
     preds = predict_texts(model_dir, validation.text.tolist()[:16], max_length=config.max_length)
-    print(json.dumps({
-        "train_rows": len(train),
-        "seconds": round(time.time() - started, 1),
-        "seconds_per_train_row": round((time.time() - started) / max(len(train), 1), 3),
-        "peak_vram_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
-        "sample_predictions": [round(float(p), 2) for p in preds[:5]],
-        "validation": json.loads((model_dir / "vera_training.json").read_text())["validation"],
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "train_rows": len(train),
+                "seconds": round(time.time() - started, 1),
+                "seconds_per_train_row": round((time.time() - started) / max(len(train), 1), 3),
+                "peak_vram_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
+                "sample_predictions": [round(float(p), 2) for p in preds[:5]],
+                "validation": json.loads((model_dir / "vera_training.json").read_text())[
+                    "validation"
+                ],
+            },
+            indent=2,
+        )
+    )
     shutil.rmtree(work, ignore_errors=True)
 
 

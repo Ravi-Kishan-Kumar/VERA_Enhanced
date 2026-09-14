@@ -1,0 +1,19 @@
+{
+  "method": "normalized",
+  "alpha": 0.1,
+  "nominal_coverage": 0.9,
+  "sigma_floor": 0.11173062026500702,
+  "q_hat": 2.877139793344714,
+  "empirical_coverage": 0.905829596412556,
+  "mean_width": 1.2590062897581522,
+  "calibration_n": 223,
+  "alternatives": {
+    "absolute": 1.3192715361513898,
+    "normalized": 1.2590062897581522
+  },
+  "test": {
+    "coverage": 0.9345794392523364,
+    "mean_width": 1.241443946577603,
+    "n": 214
+  }
+}

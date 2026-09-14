@@ -18,6 +18,7 @@ in the production-pinned ``.venv``.
 from __future__ import annotations
 
 import json
+import math
 import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -81,6 +82,20 @@ def _dataset(frame: pd.DataFrame, tokenizer: Any, max_length: int) -> Any:
     )
 
 
+def _supported_kwargs(cls: Any, **kwargs: Any) -> dict[str, Any]:
+    """Drop keyword arguments ``cls.__init__`` does not accept (transformers 4.x vs 5.x).
+
+    Dropped names are printed so a silently ignored setting is visible in the log.
+    """
+    import inspect
+
+    accepted = set(inspect.signature(cls.__init__).parameters)
+    dropped = sorted(set(kwargs) - accepted)
+    if dropped:
+        print(f"[finetune] {cls.__name__} does not accept {dropped}; skipping them")
+    return {k: v for k, v in kwargs.items() if k in accepted}
+
+
 def train_regressor(
     train: pd.DataFrame, validation: pd.DataFrame, output_dir: str | Path, config: FinetuneConfig
 ) -> Path:
@@ -103,35 +118,50 @@ def train_regressor(
     model = AutoModelForSequenceClassification.from_pretrained(
         config.base_model, num_labels=1, problem_type="regression"
     )
+    # Mixed precision needs FP32 master weights. transformers 5 loads checkpoints in their stored
+    # dtype (FP16 for deberta-v3-base), which makes GradScaler fail with
+    # "Attempting to unscale FP16 gradients". No-op on transformers 4.
+    model = model.float()
 
     def compute_metrics(eval_pred: Any) -> dict[str, float]:
         predictions, labels = eval_pred
         return {"mae": float(np.mean(np.abs(np.asarray(predictions).reshape(-1) - labels)))}
 
+    # Native bf16 needs compute capability >= 8 (Ampere+). Recent torch reports bf16 as
+    # "supported" on older GPUs such as the T4 via slow emulation, so check capability instead.
+    native_bf16 = torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8
+    # Warmup as an explicit step count: `warmup_ratio` was removed in transformers 5.
+    steps_per_epoch = math.ceil(
+        len(train) / (config.train_batch_size * config.gradient_accumulation_steps)
+    )
+    warmup_steps = math.ceil(config.warmup_ratio * steps_per_epoch * config.epochs)
     args = TrainingArguments(
-        output_dir=str(output_dir / "checkpoints"),
-        num_train_epochs=config.epochs,
-        learning_rate=config.learning_rate,
-        per_device_train_batch_size=config.train_batch_size,
-        per_device_eval_batch_size=config.eval_batch_size,
-        gradient_accumulation_steps=config.gradient_accumulation_steps,
-        warmup_ratio=config.warmup_ratio,
-        weight_decay=config.weight_decay,
-        eval_strategy="epoch",  # `evaluation_strategy` (PRD) is deprecated in 4.45
-        save_strategy="epoch",
-        save_total_limit=1,
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_mae",
-        greater_is_better=False,
-        # bf16 on Ampere+ (DeBERTa-v3 is prone to fp16 overflow); fp16 on older GPUs.
-        bf16=torch.cuda.is_available() and torch.cuda.is_bf16_supported(),
-        fp16=torch.cuda.is_available() and not torch.cuda.is_bf16_supported(),
-        gradient_checkpointing=config.gradient_checkpointing,
-        optim=config.optim,
-        dataloader_num_workers=0,  # Windows-safe
-        logging_steps=20,
-        report_to="none",
-        seed=config.seed,
+        **_supported_kwargs(
+            TrainingArguments,
+            output_dir=str(output_dir / "checkpoints"),
+            num_train_epochs=config.epochs,
+            learning_rate=config.learning_rate,
+            per_device_train_batch_size=config.train_batch_size,
+            per_device_eval_batch_size=config.eval_batch_size,
+            gradient_accumulation_steps=config.gradient_accumulation_steps,
+            warmup_steps=warmup_steps,
+            weight_decay=config.weight_decay,
+            eval_strategy="epoch",  # `evaluation_strategy` (PRD) was removed
+            save_strategy="epoch",
+            save_total_limit=1,
+            load_best_model_at_end=True,
+            metric_for_best_model="eval_mae",
+            greater_is_better=False,
+            # bf16 on Ampere+ (DeBERTa-v3 is prone to fp16 overflow); fp16 on older GPUs.
+            bf16=native_bf16,
+            fp16=torch.cuda.is_available() and not native_bf16,
+            gradient_checkpointing=config.gradient_checkpointing,
+            optim=config.optim,
+            dataloader_num_workers=0,  # Windows-safe
+            logging_steps=20,
+            report_to="none",
+            seed=config.seed,
+        )
     )
     trainer = Trainer(
         model=model,

@@ -26,6 +26,7 @@ REQUIRED_ARTIFACTS: Final[dict[str, str]] = {
     "absa_model.onnx": "notebooks/04_finetune_experience.ipynb (ABSA export section)",
     "absa_tokenizer.json": "notebooks/04_finetune_experience.ipynb (ABSA export section)",
     "absa_config.json": "notebooks/04_finetune_experience.ipynb (ABSA export section)",
+    "aspect_detector.joblib": "training/scripts/train_all.py --stages aspects",
     "domain_tfidf.joblib": "notebooks/05_train_fusion.ipynb (domain model section)",
     "fusion_ensemble.json": "notebooks/05_train_fusion.ipynb",
     "conformal_qhat.json": "notebooks/06_calibration.ipynb",

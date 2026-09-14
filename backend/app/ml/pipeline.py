@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from app.ml.agents.absa import ABSAModule
+from app.ml.agents.aspect_detector import AspectDetector
 from app.ml.agents.consistency import ConsistencyScorer
 from app.ml.agents.domain_rating import DomainRatingModel
 from app.ml.agents.experience_extractor import ExperienceExtractor
@@ -56,11 +57,13 @@ def extract_signals(
     timestamp_ms: int | None = None,
     product_title: str | None = "",
     experience_output: dict[str, Any] | None = None,
+    aspect_mentions: dict[str, bool] | None = None,
 ) -> dict[str, Any]:
     """Run Agents 1–6 and return the ``agent_outputs`` mapping for fusion.
 
     Shared by production and the training notebooks so both build features
-    through exactly the same code path.
+    through exactly the same code path. Training supplies out-of-fold
+    ``experience_output`` and ``aspect_mentions``; production computes both.
     """
     pre = agents.preprocessor.process(text, product_title)
     clean = pre["clean_text"]
@@ -79,7 +82,7 @@ def extract_signals(
     return {
         "preprocessor": pre,
         "experience_extractor": experience_output,
-        "absa": agents.absa.process(clean),
+        "absa": agents.absa.process(clean, aspect_mentions),
         "consistency": agents.consistency.process(
             star_rating, experience_output["predicted_score"]
         ),
@@ -139,7 +142,10 @@ class VERAPipeline:
                 paths["experience_model.onnx"], paths["experience_tokenizer.json"]
             ),
             absa=ABSAModule(
-                paths["absa_model.onnx"], paths["absa_tokenizer.json"], paths["absa_config.json"]
+                paths["absa_model.onnx"],
+                paths["absa_tokenizer.json"],
+                paths["absa_config.json"],
+                detector=AspectDetector(paths["aspect_detector.joblib"]),
             ),
             consistency=ConsistencyScorer(),
             quality=QualityAssessor(imputation=self.fusion.imputation_means),
