@@ -1,0 +1,42 @@
+{
+  "levels": [
+    {
+      "target": 0.95,
+      "method": "normalized",
+      "q_hat": 6.904941552854588,
+      "coverage": 0.9650872817955112,
+      "mean_width": 1.336445188295573,
+      "n": 802
+    },
+    {
+      "target": 0.9,
+      "method": "normalized",
+      "q_hat": 5.3247018719421675,
+      "coverage": 0.9102244389027432,
+      "mean_width": 1.0628430620130098,
+      "n": 802
+    },
+    {
+      "target": 0.8,
+      "method": "absolute",
+      "q_hat": 0.41387128829956055,
+      "coverage": 0.8129675810473815,
+      "mean_width": 0.7847994891485371,
+      "n": 802
+    }
+  ],
+  "production": {
+    "method": "normalized",
+    "alpha": 0.1,
+    "nominal_coverage": 0.9,
+    "sigma_floor": 0.05008915066719055,
+    "q_hat": 5.3247018719421675,
+    "empirical_coverage": 0.9020618556701031,
+    "mean_width": 1.0556350417470046,
+    "calibration_n": 776,
+    "alternatives": {
+      "absolute": 1.0704439511311423,
+      "normalized": 1.0556350417470046
+    }
+  }
+}

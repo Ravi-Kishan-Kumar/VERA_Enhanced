@@ -1,17 +1,17 @@
 {
   "train": {
-    "vera_mae": 0.25316273688074936,
-    "star_as_prediction_mae": 0.4847535505430242,
-    "experience_only_mae": 0.31817720288919626
+    "vera_mae": 0.24661955559775417,
+    "star_as_prediction_mae": 0.48131709331131295,
+    "experience_only_mae": 0.28041770333204263
   },
   "calibration": {
-    "vera_mae": 0.27333508613632945,
-    "star_as_prediction_mae": 0.47865853658536583,
-    "experience_only_mae": 0.3136293527556629
+    "vera_mae": 0.2737626187580148,
+    "star_as_prediction_mae": 0.5061211340206185,
+    "experience_only_mae": 0.3067806608898124
   },
   "test": {
-    "vera_mae": 0.2844359610454146,
-    "star_as_prediction_mae": 0.5078313253012048,
-    "experience_only_mae": 0.32781250160860725
+    "vera_mae": 0.25176453337705046,
+    "star_as_prediction_mae": 0.4956359102244389,
+    "experience_only_mae": 0.2788370187740373
   }
 }

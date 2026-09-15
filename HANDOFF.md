@@ -70,3 +70,23 @@ All 8 artifacts present: `cd backend; ..\.venv\Scripts\python.exe -m app.ml.mode
 - Learning curve (validation MAE 0.279 -> 0.272 at 25% -> 100% of train): flat-to-improving, train MAE rises toward validation (less memorization). More labels help mainly through the experience model.
 - Labeling restarted 07:10; primary-b/qwen-b ~1,000/2,000 at 08:00. Gemini keys (9) added to `.env`, but Gemini multi-key pooling is not implemented.
 - Next: finish rows 2000-3999, round 3 on Colab with all labels (cap 4 epochs), widen aspect C grid, re-check 95% coverage, update `frontend/src/content/benchmarks.ts` round 2 figures (Codex, frontend-only).
+
+## Round 3 status 2026-09-15 12:30 (paused by user)
+
+- Labels: `data/labels/labels_v1.jsonl` = 4,000 reviews / 2,705 products (3,990 two-model consensus). Round-2 labels backed up as `labels_v1_round2.jsonl`.
+- Colab round-3 DeBERTa (512 tokens, AdamW): OOF MAE 0.285 (R2 0.904, within +-0.5 84.0%), folds 0.306/0.290/0.292/0.323/0.304, final val 0.283. On the same 2,022 reviews: round-2 0.318 vs round-3 0.289.
+- Installed: round-3 model at `data/processed/final_model/model` (round 2 kept as `model_round2_colab`); `data/labels/experience_oof.csv` = round-3 OOF (round 2 kept as `experience_oof_round2_colab.csv`). Colab outputs in `colab_results/round3/`.
+- Pipeline was stopped during `final` export. `data/models/` still holds the round-2 ONNX and fusion artifacts (consistent set). `experience_tokenizer.json` was rewritten but is identical in content (same base tokenizer, max_length 512).
+- Resume: `train_all.py --force --full-gpu --stages final,aspects,fusion,calibrate,evaluate,report,diagnostics` (log `reports/round3.log`), then snapshot to `reports/round3/`.
+
+## Round 3 COMPLETE 2026-09-15 15:46 (4,000 labels, Colab DeBERTa) — snapshot `reports/round3/`, log `reports/round3.log`
+
+- Experience model: OOF MAE 0.285 (R2 0.904); final val 0.283; FP32 ONNX parity max diff 5e-6 (INT8 rejected).
+- Aspect detector: test macro F1 0.803 vs 0.776 keywords; all aspects >= 0.70 (build_quality 0.712, connectivity 0.724). All 10 chose C=8 (grid edge): widen C grid.
+- Fusion tuned: depth 2, min_child_weight 5, reg_lambda 10, 257 trees; CV val 0.261 +- 0.004, gap 0.017.
+- Splits (fusion ensemble): train 0.247 (R2 0.938) / calibration 0.274 (R2 0.906) / test 0.252 (RMSE 0.357, R2 0.924, within +-0.5 88.2%, +-1 98.5%). Stars on test 0.496; experience-only 0.279.
+- Nested CV (15 folds, re-tuned): 0.261 +- 0.007 vs stars 0.460 +- 0.015, 15/15, p=3e-5, mean gap 0.012.
+- Ablation: experience 0.458 -> 0.264; domain/quality not individually significant; full 0.262 (15/15 vs previous step).
+- Conformal on test (n=802): 80% -> 81.3%, 90% -> 91.0% (width 1.06), 95% -> 96.5%. Round-2 95% under-coverage resolved.
+- Learning curve (validation MAE 0.287 -> 0.274 at 25% -> 100% of train; train 0.232 -> 0.247): converging, still improving with data.
+- Next: update `frontend/src/content/benchmarks.ts` (rounds 2 and 3) from these reports; widen aspect C grid; test a trimmed feature set; HF upload + deploy.

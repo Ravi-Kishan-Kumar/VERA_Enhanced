@@ -1,0 +1,17 @@
+{
+  "train": {
+    "vera_mae": 0.24661955559775417,
+    "star_as_prediction_mae": 0.48131709331131295,
+    "experience_only_mae": 0.28041770333204263
+  },
+  "calibration": {
+    "vera_mae": 0.2737626187580148,
+    "star_as_prediction_mae": 0.5061211340206185,
+    "experience_only_mae": 0.3067806608898124
+  },
+  "test": {
+    "vera_mae": 0.25176453337705046,
+    "star_as_prediction_mae": 0.4956359102244389,
+    "experience_only_mae": 0.2788370187740373
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "quality": {
+    "train": {
+      "vera": {
+        "mae": 0.247,
+        "rmse": 0.331,
+        "r2": 0.938,
+        "within_0_5_stars": 0.893,
+        "within_1_0_star": 0.989,
+        "n": 2422
+      },
+      "text_model_out_of_fold": {
+        "mae": 0.28,
+        "rmse": 0.393,
+        "r2": 0.913,
+        "within_0_5_stars": 0.85,
+        "within_1_0_star": 0.976,
+        "n": 2422
+      },
+      "stars_as_prediction": {
+        "mae": 0.481,
+        "rmse": 0.668,
+        "r2": 0.748,
+        "within_0_5_stars": 0.706,
+        "within_1_0_star": 0.911,
+        "n": 2422
+      }
+    },
+    "calibration": {
+      "vera": {
+        "mae": 0.274,
+        "rmse": 0.399,
+        "r2": 0.906,
+        "within_0_5_stars": 0.866,
+        "within_1_0_star": 0.973,
+        "n": 776
+      },
+      "text_model_out_of_fold": {
+        "mae": 0.307,
+        "rmse": 0.457,
+        "r2": 0.877,
+        "within_0_5_stars": 0.816,
+        "within_1_0_star": 0.97,
+        "n": 776
+      },
+      "stars_as_prediction": {
+        "mae": 0.506,
+        "rmse": 0.715,
+        "r2": 0.699,
+        "within_0_5_stars": 0.702,
+        "within_1_0_star": 0.912,
+        "n": 776
+      }
+    },
+    "test": {
+      "vera": {
+        "mae": 0.252,
+        "rmse": 0.357,
+        "r2": 0.924,
+        "within_0_5_stars": 0.882,
+        "within_1_0_star": 0.985,
+        "n": 802
+      },
+      "text_model_out_of_fold": {
+        "mae": 0.279,
+        "rmse": 0.409,
+        "r2": 0.901,
+        "within_0_5_stars": 0.837,
+        "within_1_0_star": 0.975,
+        "n": 802
+      },
+      "stars_as_prediction": {
+        "mae": 0.496,
+        "rmse": 0.669,
+        "r2": 0.734,
+        "within_0_5_stars": 0.696,
+        "within_1_0_star": 0.915,
+        "n": 802
+      }
+    },
+    "fit_diagnosis": {
+      "train_minus_test_mae_gap": 0.005,
+      "note": "train rows were seen by the fusion ensemble; calibration/test rows were not"
+    }
+  },
+  "learning_curve_train_vs_calibration": [
+    {
+      "fraction": 0.25,
+      "n_rows": 619,
+      "train_mae": 0.23221620373271393,
+      "validation_mae": 0.287017337132975
+    },
+    {
+      "fraction": 0.5,
+      "n_rows": 1216,
+      "train_mae": 0.2375685177547367,
+      "validation_mae": 0.278182932396525
+    },
+    {
+      "fraction": 0.75,
+      "n_rows": 1821,
+      "train_mae": 0.24237047015540486,
+      "validation_mae": 0.2763957502608447
+    },
+    {
+      "fraction": 1.0,
+      "n_rows": 2422,
+      "train_mae": 0.24666446358777588,
+      "validation_mae": 0.2742273083974406
+    }
+  ],
+  "interpretation": {
+    "final_gap_calibration_minus_train": 0.0276,
+    "validation_improvement_last_step": 0.0022
+  }
+}
