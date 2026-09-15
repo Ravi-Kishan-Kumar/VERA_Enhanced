@@ -28,12 +28,12 @@ test("analyzer, rankings, and methodology render honest real states", async ({ p
   await expect(page.getByText("Round 1 · 1,059 labels")).toBeVisible()
 
   await page.goto("/products")
-  await expect(page.getByRole("heading", { name: "Ranked by experience, not clicks." })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Experience over clicks." })).toBeVisible()
   await expect(page.getByRole("heading", { name: "No ranked products yet" })).toBeVisible()
 
   await page.goto("/about")
   await expect(page.getByRole("heading", { name: "How VERA reads a review." })).toBeVisible()
-  await expect(page.getByText(/reference annotations used for agreement were produced by Claude, an LLM — not by humans/i)).toBeVisible()
+  await expect(page.getByText(/reference annotations used for agreement were produced by Claude, an LLM, not by humans/i)).toBeVisible()
   await expect(page.getByText("Round 1 · 1,059 labels", { exact: true })).toBeVisible()
   const pendingRound = page.getByText("Round 2", { exact: true }).locator("..")
   await expect(pendingRound.getByText("Evaluation in progress")).toBeVisible()
@@ -55,7 +55,7 @@ test("rankings render returned rows and support mobile cards", async ({ page }) 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/products")
   await expect(page.getByRole("link", { name: /Fixture earbuds/ })).toBeVisible()
-  await expect(page.getByText("1 products · page 1 of 1")).toBeVisible()
+  await expect(page.getByText("1 products, page 1 of 1")).toBeVisible()
 })
 
 test("failed pagination preserves the product and loaded reviews", async ({ page }) => {
@@ -74,7 +74,7 @@ test("failed pagination preserves the product and loaded reviews", async ({ page
   await expect(page.getByRole("alert").filter({ hasText: "temporarily unavailable" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Fixture earbuds" })).toBeVisible()
   await expect(page.getByText(/Saved review 1:/)).toBeVisible()
-  await expect(page.getByText("20 / 21")).toBeVisible()
+  await expect(page.getByText("20 of 21")).toBeVisible()
 })
 
 test("rate limiting preserves input and honors Retry-After without auto-submit", async ({ page }) => {

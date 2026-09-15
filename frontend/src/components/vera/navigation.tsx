@@ -39,27 +39,26 @@ export function Navigation() {
 
   return (
     <>
-      <header className="glass-elevated sticky top-3 z-40 mx-auto w-[calc(100%-2rem)] max-w-6xl rounded-shell">
-        <div className="flex h-14 items-center gap-2 px-2 sm:px-3">
-          <Link href="/" aria-label="VERA home" className="flex min-h-11 items-center gap-2 rounded-control px-2 font-semibold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[76rem] items-center gap-4 px-4 sm:px-6">
+          <Link href="/" aria-label="VERA home" className="flex min-h-11 items-center gap-2 rounded-control pr-3 font-semibold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
             <span className="size-2 rounded-[2px] bg-primary" aria-hidden="true" />
             VERA
           </Link>
 
-          <nav aria-label="Main navigation" className="ml-2 hidden items-center rounded-xl bg-slate-100/80 p-1 md:flex dark:bg-slate-800/70">
+          <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
             {links.map((link) => {
               const active = isActive(pathname, link.href)
               return (
-                <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={cn("relative flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-[120ms] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40", active && "text-foreground")}> 
-                  {active && <span className="absolute inset-0 rounded-lg bg-background shadow-sm" />}
-                  <span className="relative">{link.label}</span>
+                <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={cn("flex min-h-11 items-center rounded-control px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40", active && "bg-muted text-foreground")}>
+                  {link.label}
                 </Link>
               )
             })}
           </nav>
 
           <div className="ml-auto flex items-center gap-0.5">
-            <Button variant="ghost" className="hidden h-10 min-w-44 justify-between rounded-control border border-border/80 bg-background/70 px-3 text-muted-foreground lg:flex" onClick={() => setCommandOpen(true)}>
+            <Button variant="outline" className="hidden h-10 min-w-40 justify-between rounded-control bg-card px-3 text-muted-foreground lg:flex" onClick={() => setCommandOpen(true)}>
               <span className="flex items-center gap-2"><Search strokeWidth={1.5} />Search</span>
               <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[11px]">⌘K</kbd>
             </Button>
@@ -68,7 +67,7 @@ export function Navigation() {
             <ThemeToggle />
             <Sheet>
               <SheetTrigger asChild><Button variant="ghost" size="icon" className="size-11 rounded-control md:hidden" aria-label="Open navigation"><Menu strokeWidth={1.5}/></Button></SheetTrigger>
-              <SheetContent className="glass-elevated w-[min(88vw,22rem)] p-3">
+              <SheetContent className="w-[min(88vw,22rem)] border-border bg-card p-3">
                 <SheetHeader className="px-2 pt-4"><SheetTitle className="text-left text-lg font-semibold">VERA</SheetTitle><SheetDescription className="text-left">Review intelligence with visible uncertainty.</SheetDescription></SheetHeader>
                 <nav aria-label="Mobile navigation" className="grid gap-1 py-5">
                   {links.map((link) => <SheetClose asChild key={link.href}><Link href={link.href} aria-current={isActive(pathname, link.href) ? "page" : undefined} className={cn("flex min-h-12 items-center rounded-control px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground", isActive(pathname, link.href) && "bg-muted text-foreground")}>{link.label}</Link></SheetClose>)}

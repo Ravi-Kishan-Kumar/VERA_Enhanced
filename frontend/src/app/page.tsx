@@ -15,15 +15,14 @@ const evidence = [
 export default function Home() {
   return (
     <>
-      <header className="page-hero">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-primary">Review intelligence</div>
-        <h1 className="display-title mt-5 max-w-5xl">See the experience behind the stars.</h1>
-        <p className="mt-6 max-w-3xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">VERA reads the experience behind an earbud review, then shows its corrected score, aspect evidence, and uncertainty in one clear result.</p>
-        <div className="mt-9 grid overflow-hidden rounded-2xl border border-border bg-card sm:w-fit sm:grid-cols-3">
-          {evidence.map(({ label, value, icon: Icon }) => <div key={label} className="flex min-w-48 items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><Icon className="size-4 text-primary" strokeWidth={1.5}/><div><p className="font-mono text-sm font-semibold tabular-nums">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div></div>)}
-        </div>
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">{roundOne.label}</p>
+      <header className="page-hero grid items-end gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div><p className="eyebrow">Review intelligence</p><h1 className="display-title mt-3">See the experience behind the stars.</h1></div>
+        <p className="max-w-md text-pretty text-base leading-7 text-muted-foreground lg:pb-1">Analyze an earbud review for corrected scores, aspect evidence, and uncertainty you can see.</p>
       </header>
+      <section className="mb-6 overflow-hidden rounded-card border border-border bg-card/70" aria-label={`${roundOne.label} model evidence`}>
+        <p className="border-b border-border px-5 py-2.5 text-xs font-medium text-muted-foreground">{roundOne.label}</p>
+        <div className="grid sm:grid-cols-3">{evidence.map(({ label, value, icon: Icon }) => <div key={label} className="flex min-h-20 items-center gap-3 border-b border-border px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><Icon className="size-4 text-primary" strokeWidth={1.5}/><div><p className="metric-number text-base font-semibold">{value}</p><p className="text-sm text-muted-foreground">{label}</p></div></div>)}</div>
+      </section>
       <ReviewAnalyzer />
     </>
   )

@@ -42,8 +42,8 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} title="Navigate VERA" description="Jump to a page or a product from the current rankings page." className="glass-elevated">
-      <CommandInput placeholder="Search pages, product title, or ASIN…" />
+    <CommandDialog open={open} onOpenChange={onOpenChange} title="Navigate VERA" description="Jump to a page or a product from the current rankings page." className="border-border bg-card shadow-[var(--shadow-elevated)]">
+      <CommandInput placeholder="Search pages, product title, or ASIN..." />
       <CommandList>
         <CommandEmpty>No matching page or loaded product.</CommandEmpty>
         <CommandGroup heading="Navigate">

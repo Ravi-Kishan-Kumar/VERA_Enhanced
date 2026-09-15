@@ -23,7 +23,7 @@ export function ThemeToggle() {
           type="button"
           variant="ghost"
           size="icon"
-          className="size-11 rounded-[10px] text-muted-foreground hover:text-foreground"
+          className="size-11 rounded-control text-muted-foreground hover:text-foreground"
           onClick={() => setTheme(dark ? "light" : "dark")}
           aria-label={mounted ? `Switch to ${dark ? "light" : "dark"} theme` : "Change color theme"}
         >

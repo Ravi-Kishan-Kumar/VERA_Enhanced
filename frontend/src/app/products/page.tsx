@@ -6,10 +6,9 @@ export const metadata = pageMetadata("Product rankings", "Compare earbuds using 
 export default function ProductsPage() {
   return (
     <>
-      <header className="page-hero">
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-primary">Product rankings</div>
-        <h1 className="display-title mt-5 max-w-4xl">Ranked by experience, not clicks.</h1>
-        <p className="mt-6 max-w-3xl text-pretty text-base leading-7 text-muted-foreground">Compare corrected experience scores with their uncertainty. Smaller or noisier review sets are pulled toward the population mean, so the ranking stays appropriately cautious.</p>
+      <header className="page-hero grid items-end gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.7fr)]">
+        <div><p className="eyebrow">Product rankings</p><h1 className="display-title mt-3 max-w-4xl">Experience over clicks.</h1></div>
+        <p className="max-w-xl text-base leading-7 text-muted-foreground">Compare corrected scores with visible uncertainty and cautious ranking for smaller review sets.</p>
       </header>
       <ProductRankings />
     </>

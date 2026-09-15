@@ -33,8 +33,8 @@ export function AspectBreakdown({ aspects, summary }: { aspects?: Partial<Record
   const chartRows: AspectChartRow[] = detected.map(({ key, label, value }) => ({ key, label, value }))
 
   return (
-    <section className="rounded-card border border-border bg-card p-5 sm:p-6" aria-labelledby="aspect-title">
-      <div className="flex flex-wrap items-end justify-between gap-3"><div><span className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">Aspect evidence</span><h2 id="aspect-title" className="mt-2 text-xl font-semibold tracking-[-0.025em]">What the review{summary ? "s reveal" : " reveals"}</h2></div><span className="font-mono text-xs text-muted-foreground">{detected.length} / 10 detected</span></div>
+    <section className="h-full rounded-card border border-border bg-card p-5 sm:p-6" aria-labelledby="aspect-title">
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><span className="eyebrow">Aspect evidence</span><h2 id="aspect-title" className="section-heading mt-2">What the review{summary ? "s reveal" : " reveals"}</h2></div><span className="metric-number text-xs text-muted-foreground">{detected.length} of 10 detected</span></div>
       {detected.length === 0 ? (
         <div className="mt-5 rounded-xl border border-dashed border-border bg-muted/35 p-5">
           <p className="text-sm font-medium">No aspect evidence detected</p>
@@ -47,7 +47,7 @@ export function AspectBreakdown({ aspects, summary }: { aspects?: Partial<Record
         </TabsContent>
         <TabsContent value="bars" className="pt-5">
           <ul className="grid gap-3" aria-label="Aspect sentiment values">
-            {detected.map((row) => <li key={row.key} className="grid grid-cols-[minmax(7rem,0.8fr)_1fr_auto] items-center gap-3 text-sm"><span>{row.label}</span><span className="relative h-2 overflow-hidden rounded-full bg-muted"><span className={cn("absolute inset-y-0 left-0 rounded-full", sentimentStyle[row.sentiment])} style={{ width: `${Math.max(8, ((row.raw + 1) / 2) * 100)}%` }}/></span><span className="min-w-20 text-right text-xs capitalize text-muted-foreground">{row.sentiment}{row.mentions != null ? ` · ${row.mentions}` : ""}</span></li>)}
+            {detected.map((row) => <li key={row.key} className="grid grid-cols-[minmax(7rem,0.8fr)_1fr_auto] items-center gap-3 text-sm"><span>{row.label}</span><span className="relative h-2 overflow-hidden rounded-full bg-muted"><span className={cn("absolute inset-y-0 left-0 rounded-full", sentimentStyle[row.sentiment])} style={{ width: `${Math.max(8, ((row.raw + 1) / 2) * 100)}%` }}/></span><span className="min-w-20 text-right text-xs capitalize text-muted-foreground">{row.sentiment}{row.mentions != null ? `, ${row.mentions}` : ""}</span></li>)}
           </ul>
         </TabsContent>
       </Tabs>}
