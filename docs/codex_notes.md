@@ -128,6 +128,83 @@ muted 6.54:1, light primary link 4.77:1, light primary button 4.84:1; dark body 
 The existing `@axe-core/playwright` package is not installed; per the brief it will not be added as
 a new dependency, and an automated axe pass remains a follow-up.
 
+### Round 3 changes
+
+- Centralized semantic colour, control/card/shell radius, elevated blur/fallback fill, shadow,
+  responsive page spacing, display type, and metric-number behavior in `globals.css`. Navigation,
+  command palette, service notice, and result surfaces now share the elevated-surface contract.
+- Reduced the narrow-screen gap above page heroes, hid desktop-only density controls on mobile,
+  and replaced the compressed 375 px benchmark table with structured comparison cards. The same
+  data remains a table from the `sm` breakpoint upward.
+- Aspect views now render only detected evidence. A truthful empty-evidence explanation replaces
+  the previous ten-row “Not mentioned” list; no empty category is plotted.
+- Analyzer validation now gives inline empty, short, over-10,000-character, and rating-contract
+  errors. Drafts survive every failure. Readiness copy explicitly describes database availability,
+  not worker/model readiness.
+- Polling now uses `/reviews/{id}/status` with bounded 1.5× backoff from 1.5 to 8 seconds and a
+  three-minute client wait window. It fetches the full review once only after `done`, or once after
+  `failed` to classify a safe worker/model message. Internal artifact paths are never rendered.
+- Replaced artificial internal-stage progression with only states the API actually confirms:
+  submission, queue, processing, and final retrieval. Scores, intervals, aspects, and explanations
+  appear only from a completed API response.
+- Refactored benchmark content into a typed discriminated list. Round 1 retains only brief-approved
+  figures; Round 2 has `status: "pending"`, no metric properties, and renders “Evaluation in
+  progress”. Its TODO names `evaluation_report.json`, `cv_comparison.json`,
+  `aspect_detector.json`, and `calibration.json` as the only future sources.
+- Fixed a server/client motion-path mismatch by making the initial SVG path state deterministic;
+  reduced motion still resolves immediately.
+
+### Round 3 verification
+
+All checks ran from `frontend/` without the live backend, trained models, Python, or GPU work:
+
+```powershell
+npm run lint
+npm run typecheck
+$env:NEXT_PRIVATE_BUILD_WORKER='1'; $env:RAYON_NUM_THREADS='2'; npm run build
+npm run test:e2e -- --workers=1
+```
+
+Final results: ESLint passed with zero warnings; Next route type generation and `tsc --noEmit`
+passed; the production build completed with one page-data/static-generation worker and generated
+all nine routes; Playwright passed **24/24** tests across desktop Chromium and mobile Chromium in
+one worker. The suite exercises empty/short/long validation, queue-to-processing-to-success with
+three lightweight status requests and one full-result request, 429 Retry-After, network failure,
+database-unavailable recovery, sanitized missing-model failure, pending benchmarks, keyboard and
+reduced-motion behavior, chart text alternatives, and horizontal overflow at 375/768/1024/1440 px.
+
+The first extended browser pass was 20/22 because a new text locator also matched an accessible
+`sr-only` table caption; the product behavior was correct. The locator was made exact, the full
+suite was rerun after the fix, and the final 24/24 result above is authoritative.
+
+The persisted comparison galleries contain 42 files each in
+`frontend/test-results/audit-before/` and `frontend/test-results/audit-after/`: seven route/states ×
+three widths × two themes, with every API call mocked. Representative visual comparison confirmed
+the fixed hero spacing, mobile benchmark cards, pending-round state, empty aspect state, solid glass
+fallback styling, and unchanged legibility in both themes. These artifacts are intentionally
+gitignored.
+
+A transient Lighthouse 12.8.2 CLI run against the local production build was saved to
+`frontend/test-results/lighthouse-mobile.json`; it did not alter project dependencies or lockfiles.
+Mobile scores were Performance **89**, Accessibility **100**, Best Practices **96**, SEO **100**.
+Lab metrics were FCP 0.9 s, LCP 3.7 s, TBT 80 ms, CLS 0, Speed Index 0.9 s. This localhost run used
+Lighthouse throttling and had no backend on port 8000, so it is diagnostic evidence rather than a
+deployed-production claim.
+
+### Known limitations and next steps
+
+1. Round 2 remains deliberately pending. Populate a completed entry only after Claude supplies and
+   accepts all four named reports; do not estimate interim values.
+2. No live model, worker, backend, training result, or production deployment was exercised. After
+   the user says **“training released”**, run a controlled end-to-end review against accepted model
+   artifacts and confirm real queue recovery and failure copy.
+3. Add per-route axe automation only if the project later accepts `@axe-core/playwright`; the package
+   was absent and the task prohibited adding it. Lighthouse accessibility covered the local home
+   route, while Playwright covers landmarks, labels, keyboard focus, and text alternatives.
+4. Repeat Lighthouse on the deployed origin with its real cache/CDN/backend conditions. The local
+   mobile LCP (3.7 s, with 0 layout shift) is the main remaining performance investigation; capture
+   multiple production runs before choosing any further optimization.
+
 ## Follow-up: prompt cleanup
 
 At the user's explicit request, deleted the tracked `CODEX_PROMPT.md` and untracked
