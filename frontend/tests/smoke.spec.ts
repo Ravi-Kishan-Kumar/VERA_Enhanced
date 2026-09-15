@@ -107,6 +107,19 @@ test("review text validation is explicit and preserves the draft", async ({ page
   await expect(page.getByLabel("Review text")).toHaveValue(longDraft)
 })
 
+test("network failure is distinct and never fabricates a result", async ({ page }) => {
+  await page.route("**/api/reviews", (route) => route.abort("connectionrefused"))
+  await page.goto("/")
+  await page.getByRole("button", { name: "Detailed praise" }).click()
+  const draft = await page.getByLabel("Review text").inputValue()
+  await page.getByRole("button", { name: "Analyze review" }).click()
+  const alert = page.getByRole("main").getByRole("alert")
+  await expect(alert).toContainText("Connection interrupted")
+  await expect(alert).toContainText("could not be reached")
+  await expect(page.getByLabel("Review text")).toHaveValue(draft)
+  await expect(page.getByTestId("score-result")).toHaveCount(0)
+})
+
 test("unavailable readiness preserves a draft and recovers only on retry", async ({ page }) => {
   let available = false
   let submissions = 0
