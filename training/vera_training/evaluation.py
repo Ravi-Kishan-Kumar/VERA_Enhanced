@@ -197,7 +197,7 @@ def nested_cross_validated_mae(
         ``(fold_maes, fold_details)`` where details include the chosen params and the
         outer-fold train MAE (for the overfitting gap).
     """
-    from vera_training.fusion import BootstrapEnsemble, tune_fusion_params
+    from vera_training.fusion import PARAM_GRID, BootstrapEnsemble, tune_fusion_params
 
     X, y = np.asarray(X), np.asarray(y, dtype=float)
     group_array = np.asarray(list(groups))
@@ -209,7 +209,7 @@ def nested_cross_validated_mae(
             y[train],
             group_array[train].tolist(),
             seed=seed,
-            **({"grid": grid} if grid is not None else {}),
+            grid=PARAM_GRID if grid is None else grid,
         )
         model = BootstrapEnsemble(n_members=n_members, seed=seed, params=tuned["params"])
         model.fit(X[train], y[train])

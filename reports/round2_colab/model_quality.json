@@ -1,0 +1,84 @@
+{
+  "train": {
+    "vera": {
+      "mae": 0.253,
+      "rmse": 0.342,
+      "r2": 0.932,
+      "within_0_5_stars": 0.882,
+      "within_1_0_star": 0.983,
+      "n": 1197
+    },
+    "text_model_out_of_fold": {
+      "mae": 0.318,
+      "rmse": 0.442,
+      "r2": 0.887,
+      "within_0_5_stars": 0.812,
+      "within_1_0_star": 0.965,
+      "n": 1197
+    },
+    "stars_as_prediction": {
+      "mae": 0.485,
+      "rmse": 0.684,
+      "r2": 0.731,
+      "within_0_5_stars": 0.723,
+      "within_1_0_star": 0.917,
+      "n": 1197
+    }
+  },
+  "calibration": {
+    "vera": {
+      "mae": 0.273,
+      "rmse": 0.347,
+      "r2": 0.929,
+      "within_0_5_stars": 0.861,
+      "within_1_0_star": 0.99,
+      "n": 410
+    },
+    "text_model_out_of_fold": {
+      "mae": 0.314,
+      "rmse": 0.435,
+      "r2": 0.889,
+      "within_0_5_stars": 0.815,
+      "within_1_0_star": 0.968,
+      "n": 410
+    },
+    "stars_as_prediction": {
+      "mae": 0.479,
+      "rmse": 0.64,
+      "r2": 0.759,
+      "within_0_5_stars": 0.702,
+      "within_1_0_star": 0.929,
+      "n": 410
+    }
+  },
+  "test": {
+    "vera": {
+      "mae": 0.284,
+      "rmse": 0.414,
+      "r2": 0.907,
+      "within_0_5_stars": 0.851,
+      "within_1_0_star": 0.976,
+      "n": 415
+    },
+    "text_model_out_of_fold": {
+      "mae": 0.328,
+      "rmse": 0.488,
+      "r2": 0.871,
+      "within_0_5_stars": 0.776,
+      "within_1_0_star": 0.964,
+      "n": 415
+    },
+    "stars_as_prediction": {
+      "mae": 0.508,
+      "rmse": 0.726,
+      "r2": 0.715,
+      "within_0_5_stars": 0.682,
+      "within_1_0_star": 0.889,
+      "n": 415
+    }
+  },
+  "fit_diagnosis": {
+    "train_minus_test_mae_gap": 0.031,
+    "note": "train rows were seen by the fusion ensemble; calibration/test rows were not"
+  }
+}

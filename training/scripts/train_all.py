@@ -204,14 +204,20 @@ def stage_fusion() -> None:
     }
     aspect_oof: dict[str, dict[str, bool]] = json.loads(ASPECT_OOF_FILE.read_text(encoding="utf-8"))
     means = signals.imputation_means(parts["train"])
-    agents = SignalAgents(
-        preprocessor=TextPreprocessor(),
-        experience=None,
-        absa=ABSAModule(
+    absa = signals.CachedABSA(
+        ABSAModule(
             paths.MODELS / "absa_model.onnx",
             paths.MODELS / "absa_tokenizer.json",
             paths.MODELS / "absa_config.json",
         ),
+        paths.PROCESSED / "absa_cache.joblib",
+        paths.MODELS / "absa_model.onnx",
+    )
+    log(f"ABSA cache: {len(absa.cache)} stored results")
+    agents = SignalAgents(
+        preprocessor=TextPreprocessor(),
+        experience=None,
+        absa=absa,  # duck-typed ABSAModule (memoized)
         consistency=ConsistencyScorer(),
         quality=QualityAssessor(means),
         domain=DomainRatingModel(paths.MODELS / "domain_tfidf.joblib"),
@@ -233,6 +239,7 @@ def stage_fusion() -> None:
             "frame": frame,
             "aspects": [o["absa"]["aspects"] for o in outputs],
         }
+        absa.save()
         log(f"features[{name}] {X.shape} in {time.time() - started:.0f}s")
     X_all, _ = signals.feature_matrix(
         labelled,

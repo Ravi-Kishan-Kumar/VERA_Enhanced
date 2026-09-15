@@ -1,0 +1,31 @@
+{
+  "gate": "G1",
+  "passed": true,
+  "human_validated": false,
+  "reference_annotator": "claude-opus-5 (LLM, not human)",
+  "self_consistency": {
+    "n": 200,
+    "kappa": 0.9793112601394343,
+    "mae": 0.0875
+  },
+  "human_agreement": {
+    "n": 200,
+    "kappa": 0.9502276984817488,
+    "mae": 0.2375
+  },
+  "cross_model_agreement": {
+    "model": "qwen/qwen3.8-27b",
+    "n": 191,
+    "kappa": 0.9474023838882039,
+    "mae": 0.2617801047120419
+  },
+  "label_specification": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "run_id": "primary-a",
+    "seed": 1,
+    "prompt_hash": "ffc83ff3984c00684e5ba1e8b4dc42a1e3dd8cf92564f1c36b1c639f7c673fe2",
+    "input_hash": "7e00d89e466da7fee62463b561863d1fe059ec3bb08dc3a9bb8cc203863eafd9"
+  },
+  "noise_floor_note": "No human annotations: G1 thresholds were checked against a non-human reference annotator. Do not report this as human-validated."
+}

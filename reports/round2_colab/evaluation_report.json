@@ -1,0 +1,332 @@
+{
+  "cv_comparison": {
+    "baseline_mae_mean": 0.46180059229129533,
+    "baseline_mae_std": 0.02382668853507183,
+    "candidate_mae_mean": 0.27725076647145275,
+    "candidate_mae_std": 0.008926860476646264,
+    "win_rate": 1.0,
+    "wilcoxon_p": 3.0517578125e-05,
+    "n_folds": 15,
+    "nested_tuning": true,
+    "mean_train_mae": 0.25739491353124394,
+    "mean_generalization_gap": 0.019855852940208783,
+    "fold_details": [
+      {
+        "repeat": 0,
+        "fold": 0,
+        "test_mae": 0.2618134681820016,
+        "train_mae": 0.2560935006317167,
+        "gap": 0.005719967550284866,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 10.0,
+        "n_estimators": 343
+      },
+      {
+        "repeat": 0,
+        "fold": 1,
+        "test_mae": 0.2828000596302762,
+        "train_mae": 0.2585132373201692,
+        "gap": 0.024286822310107037,
+        "max_depth": 2,
+        "min_child_weight": 1,
+        "reg_lambda": 1.0,
+        "n_estimators": 206
+      },
+      {
+        "repeat": 0,
+        "fold": 2,
+        "test_mae": 0.29664191799442263,
+        "train_mae": 0.25119966546028466,
+        "gap": 0.04544225253413797,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 1.0,
+        "n_estimators": 252
+      },
+      {
+        "repeat": 0,
+        "fold": 3,
+        "test_mae": 0.2651450369438988,
+        "train_mae": 0.26169325375862423,
+        "gap": 0.0034517831852745595,
+        "max_depth": 2,
+        "min_child_weight": 1,
+        "reg_lambda": 10.0,
+        "n_estimators": 267
+      },
+      {
+        "repeat": 0,
+        "fold": 4,
+        "test_mae": 0.27756295089769845,
+        "train_mae": 0.25982680150650234,
+        "gap": 0.01773614939119611,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 1.0,
+        "n_estimators": 245
+      },
+      {
+        "repeat": 1,
+        "fold": 0,
+        "test_mae": 0.28135322685816777,
+        "train_mae": 0.25298663489337037,
+        "gap": 0.028366591964797405,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 1.0,
+        "n_estimators": 271
+      },
+      {
+        "repeat": 1,
+        "fold": 1,
+        "test_mae": 0.2767672586680657,
+        "train_mae": 0.26241173958543484,
+        "gap": 0.01435551908263083,
+        "max_depth": 2,
+        "min_child_weight": 5,
+        "reg_lambda": 10.0,
+        "n_estimators": 242
+      },
+      {
+        "repeat": 1,
+        "fold": 2,
+        "test_mae": 0.2685855166078201,
+        "train_mae": 0.2583315729504765,
+        "gap": 0.010253943657343612,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 1.0,
+        "n_estimators": 230
+      },
+      {
+        "repeat": 1,
+        "fold": 3,
+        "test_mae": 0.27673231227703005,
+        "train_mae": 0.2554238375276327,
+        "gap": 0.021308474749397344,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 1.0,
+        "n_estimators": 264
+      },
+      {
+        "repeat": 1,
+        "fold": 4,
+        "test_mae": 0.29084977043333965,
+        "train_mae": 0.25792972655425517,
+        "gap": 0.03292004387908448,
+        "max_depth": 2,
+        "min_child_weight": 5,
+        "reg_lambda": 1.0,
+        "n_estimators": 210
+      },
+      {
+        "repeat": 2,
+        "fold": 0,
+        "test_mae": 0.2806136401858342,
+        "train_mae": 0.2564489046732585,
+        "gap": 0.024164735512575697,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 10.0,
+        "n_estimators": 271
+      },
+      {
+        "repeat": 2,
+        "fold": 1,
+        "test_mae": 0.2766183692355489,
+        "train_mae": 0.2564529252411732,
+        "gap": 0.020165443994375698,
+        "max_depth": 2,
+        "min_child_weight": 5,
+        "reg_lambda": 10.0,
+        "n_estimators": 258
+      },
+      {
+        "repeat": 2,
+        "fold": 2,
+        "test_mae": 0.26701098438446896,
+        "train_mae": 0.2592546770701537,
+        "gap": 0.007756307314315258,
+        "max_depth": 2,
+        "min_child_weight": 1,
+        "reg_lambda": 10.0,
+        "n_estimators": 261
+      },
+      {
+        "repeat": 2,
+        "fold": 3,
+        "test_mae": 0.28014498682164435,
+        "train_mae": 0.2564730273352729,
+        "gap": 0.023671959486371463,
+        "max_depth": 2,
+        "min_child_weight": 15,
+        "reg_lambda": 10.0,
+        "n_estimators": 263
+      },
+      {
+        "repeat": 2,
+        "fold": 4,
+        "test_mae": 0.2761219979515738,
+        "train_mae": 0.25788419846033445,
+        "gap": 0.01823779949123938,
+        "max_depth": 2,
+        "min_child_weight": 5,
+        "reg_lambda": 10.0,
+        "n_estimators": 273
+      }
+    ]
+  },
+  "test_interval": {
+    "coverage": 0.8843373493975903,
+    "mean_width": 0.9989221825492974,
+    "n": 415
+  },
+  "conformal": {
+    "method": "normalized",
+    "alpha": 0.1,
+    "nominal_coverage": 0.9,
+    "sigma_floor": 0.07506528869271278,
+    "q_hat": 3.5078651920929906,
+    "empirical_coverage": 0.9024390243902439,
+    "mean_width": 1.0271408390474719,
+    "calibration_n": 410,
+    "alternatives": {
+      "absolute": 1.0282090332449936,
+      "normalized": 1.0271408390474719
+    },
+    "test": {
+      "coverage": 0.8843373493975903,
+      "mean_width": 0.9989221825492974,
+      "n": 415
+    }
+  },
+  "aspects": [
+    {
+      "aspect": "sound_quality",
+      "support": 286,
+      "detection_f1": 0.9303135888501742,
+      "sentiment_accuracy": 0.8052434456928839,
+      "sentiment_n": 267
+    },
+    {
+      "aspect": "bass",
+      "support": 62,
+      "detection_f1": 0.873015873015873,
+      "sentiment_accuracy": 0.7454545454545455,
+      "sentiment_n": 55
+    },
+    {
+      "aspect": "battery_life",
+      "support": 75,
+      "detection_f1": 0.8625,
+      "sentiment_accuracy": 0.7971014492753623,
+      "sentiment_n": 69
+    },
+    {
+      "aspect": "comfort",
+      "support": 152,
+      "detection_f1": 0.757396449704142,
+      "sentiment_accuracy": 0.765625,
+      "sentiment_n": 128
+    },
+    {
+      "aspect": "fit",
+      "support": 155,
+      "detection_f1": 0.7707006369426752,
+      "sentiment_accuracy": 0.8264462809917356,
+      "sentiment_n": 121
+    },
+    {
+      "aspect": "build_quality",
+      "support": 158,
+      "detection_f1": 0.7048710601719198,
+      "sentiment_accuracy": 0.7886178861788617,
+      "sentiment_n": 123
+    },
+    {
+      "aspect": "connectivity",
+      "support": 100,
+      "detection_f1": 0.7410714285714286,
+      "sentiment_accuracy": 0.8433734939759037,
+      "sentiment_n": 83
+    },
+    {
+      "aspect": "microphone",
+      "support": 48,
+      "detection_f1": 0.75,
+      "sentiment_accuracy": 0.8717948717948718,
+      "sentiment_n": 39
+    },
+    {
+      "aspect": "noise_cancellation",
+      "support": 62,
+      "detection_f1": 0.816,
+      "sentiment_accuracy": 0.7647058823529411,
+      "sentiment_n": 51
+    },
+    {
+      "aspect": "value",
+      "support": 209,
+      "detection_f1": 0.8,
+      "sentiment_accuracy": 0.8433734939759037,
+      "sentiment_n": 166
+    }
+  ],
+  "aspect_f1_all_at_least_0_70": true,
+  "gates": {
+    "G1": {
+      "passed": true,
+      "human_validated": false,
+      "reference_annotator": "claude-opus-5 (LLM, not human)"
+    },
+    "G3": {
+      "gate": "G3",
+      "passed": true,
+      "max_seconds": 5.384535700000015,
+      "mean_seconds": 1.5303935700000237
+    },
+    "G4": {
+      "gate": "G4",
+      "passed": true,
+      "checks": {
+        "beats_baseline": true,
+        "significant": true,
+        "win_rate_at_least_85pct": true,
+        "coverage_at_least_88pct": true
+      }
+    }
+  },
+  "label_agreement": {
+    "gate": "G1",
+    "passed": true,
+    "human_validated": false,
+    "reference_annotator": "claude-opus-5 (LLM, not human)",
+    "self_consistency": {
+      "n": 200,
+      "kappa": 0.9793112601394343,
+      "mae": 0.0875
+    },
+    "human_agreement": {
+      "n": 200,
+      "kappa": 0.9502276984817488,
+      "mae": 0.2375
+    },
+    "cross_model_agreement": {
+      "model": "qwen/qwen3.8-27b",
+      "n": 191,
+      "kappa": 0.9474023838882039,
+      "mae": 0.2617801047120419
+    },
+    "label_specification": {
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "run_id": "primary-a",
+      "seed": 1,
+      "prompt_hash": "ffc83ff3984c00684e5ba1e8b4dc42a1e3dd8cf92564f1c36b1c639f7c673fe2",
+      "input_hash": "7e00d89e466da7fee62463b561863d1fe059ec3bb08dc3a9bb8cc203863eafd9"
+    },
+    "noise_floor_note": "No human annotations: G1 thresholds were checked against a non-human reference annotator. Do not report this as human-validated."
+  }
+}

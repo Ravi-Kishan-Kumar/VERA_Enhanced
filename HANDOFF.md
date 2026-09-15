@@ -57,3 +57,16 @@ All 8 artifacts present: `cd backend; ..\.venv\Scripts\python.exe -m app.ml.mode
 - NOT done: fusion was stopped during signal extraction (CPU, ~30 min, no progress log, no partial cache).
   - Next: add a per-review signal cache/progress log, then run `train_all.py --full-gpu --force --stages fusion,calibrate,evaluate,report,diagnostics`. Do NOT rerun `final` without `--full-gpu` (384 vs 512 max_length).
 - Labeling stopped. primary-a 1981, qwen-a 1997, primary-b 149, qwen-b 210 (union rows 0-1999 = 2000). Restart the `--until-done` daemons for rows 2000-3999.
+
+## Round 2 COMPLETE 2026-09-15 (Colab experience model, 2,022 labels) — snapshot `reports/round2_colab/`
+
+- Fusion stage now memoizes Agent 3 (ABSA) outputs in `data/processed/absa_cache.joblib` (keyed by clean text + mentions + model file); reruns are near-instant, stopped runs resume.
+- Tuned fusion: depth 2, min_child_weight 15, reg_lambda 10, 314 trees; CV val 0.290, gap 0.042.
+- Test split (415, unseen products): VERA MAE 0.284, RMSE 0.414, R2 0.907, within +-0.5 85.1%, +-1 97.6%. Stars 0.508; experience-only 0.328. Train 0.253 / calibration 0.273 (gap 0.031).
+- Nested CV (15 folds, re-tuned per fold): 0.277 +- 0.009 vs stars 0.462 +- 0.024, 15/15 wins, p=3e-5, mean train-held-out gap 0.020.
+- Ablation: experience gives nearly all gain (0.464 -> 0.278); domain and quality not individually significant; full model 0.277 (p=4e-4 vs previous step).
+- Conformal coverage on test: 80% -> 80.5%, 90% -> 88.4% (width 1.00), 95% -> 92.8% (mild under-coverage; revisit with round-3 calibration set).
+- Aspect detector: test macro F1 0.801, all aspects >= 0.70. Gates G2, G3, G4 pass.
+- Learning curve (validation MAE 0.279 -> 0.272 at 25% -> 100% of train): flat-to-improving, train MAE rises toward validation (less memorization). More labels help mainly through the experience model.
+- Labeling restarted 07:10; primary-b/qwen-b ~1,000/2,000 at 08:00. Gemini keys (9) added to `.env`, but Gemini multi-key pooling is not implemented.
+- Next: finish rows 2000-3999, round 3 on Colab with all labels (cap 4 epochs), widen aspect C grid, re-check 95% coverage, update `frontend/src/content/benchmarks.ts` round 2 figures (Codex, frontend-only).

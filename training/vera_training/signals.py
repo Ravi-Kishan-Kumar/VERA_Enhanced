@@ -18,9 +18,15 @@ Two training-specific inputs:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import copy
+import hashlib
+import json
+import time
+from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
+import joblib
 import numpy as np
 import pandas as pd
 
@@ -36,6 +42,57 @@ def _optional_int(value: Any) -> int | None:
 
 def _optional_bool(value: Any) -> bool | None:
     return None if value is None or pd.isna(value) else bool(value)
+
+
+class CachedABSA:
+    """Disk-memoized wrapper around :class:`app.ml.agents.absa.ABSAModule` (training only).
+
+    Agent 3's ONNX model dominates feature-building time on CPU, and its output depends only on
+    the cleaned text, the aspect mentions and the model file. Results are keyed by all three, so
+    re-running fusion (or building the ``all`` matrix after the split matrices) reuses them, and
+    a stopped run resumes. Progress is printed every ``log_every`` new inferences.
+    """
+
+    def __init__(
+        self, absa: Any, cache_path: str | Path, model_path: str | Path, log_every: int = 200
+    ) -> None:
+        self.absa = absa
+        self.cache_path = Path(cache_path)
+        model = Path(model_path).stat()
+        self.model_key = f"{model.st_size}:{model.st_mtime_ns}"
+        self.log_every = log_every
+        self.cache: dict[str, dict[str, Any]] = {}
+        if self.cache_path.exists():
+            saved = joblib.load(self.cache_path)
+            if saved.get("model_key") == self.model_key:
+                self.cache = saved["results"]
+        self.new = 0
+        self.started = time.time()
+
+    def _key(self, clean_text: str, mentioned: Mapping[str, bool] | None) -> str:
+        payload = json.dumps([clean_text, dict(mentioned) if mentioned else None], sort_keys=True)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def mentioned(self, clean_text: str) -> dict[str, bool]:
+        return dict(self.absa.mentioned(clean_text))
+
+    def process(
+        self, clean_text: str, mentioned: Mapping[str, bool] | None = None
+    ) -> dict[str, Any]:
+        key = self._key(clean_text, mentioned)
+        if key not in self.cache:
+            self.cache[key] = self.absa.process(clean_text, mentioned)
+            self.new += 1
+            if self.new % self.log_every == 0:
+                rate = self.new / max(time.time() - self.started, 1e-9)
+                print(f"[absa-cache] {self.new} new inferences ({rate:.1f}/s)", flush=True)
+                self.save()
+        return copy.deepcopy(self.cache[key])  # callers must not mutate the cached result
+
+    def save(self) -> None:
+        tmp = self.cache_path.with_suffix(".tmp")
+        joblib.dump({"model_key": self.model_key, "results": self.cache}, tmp)
+        tmp.replace(self.cache_path)
 
 
 def imputation_means(frame: pd.DataFrame) -> dict[str, float]:
@@ -57,7 +114,7 @@ def imputation_means(frame: pd.DataFrame) -> dict[str, float]:
 def feature_matrix(
     frame: pd.DataFrame,
     agents: SignalAgents,
-    experience_raw: Sequence[float],
+    experience_raw: Sequence[float] | np.ndarray,
     *,
     metadata_dropout: float,
     seed: int = 42,

@@ -1,0 +1,119 @@
+{
+  "n_labelled": 2022,
+  "n_test": 415,
+  "per_aspect": [
+    {
+      "aspect": "sound_quality",
+      "C": 8.0,
+      "threshold": 0.22,
+      "tuning_oof_f1": 0.9184,
+      "test_support": 286,
+      "test_f1": 0.9303,
+      "test_precision": 0.9271,
+      "test_recall": 0.9336,
+      "test_f1_keywords_only": 0.9149
+    },
+    {
+      "aspect": "bass",
+      "C": 0.5,
+      "threshold": 0.33,
+      "tuning_oof_f1": 0.8881,
+      "test_support": 62,
+      "test_f1": 0.873,
+      "test_precision": 0.8594,
+      "test_recall": 0.8871,
+      "test_f1_keywords_only": 0.873
+    },
+    {
+      "aspect": "battery_life",
+      "C": 8.0,
+      "threshold": 0.76,
+      "tuning_oof_f1": 0.8089,
+      "test_support": 75,
+      "test_f1": 0.8625,
+      "test_precision": 0.8118,
+      "test_recall": 0.92,
+      "test_f1_keywords_only": 0.8249
+    },
+    {
+      "aspect": "comfort",
+      "C": 8.0,
+      "threshold": 0.28,
+      "tuning_oof_f1": 0.8003,
+      "test_support": 152,
+      "test_f1": 0.7574,
+      "test_precision": 0.6882,
+      "test_recall": 0.8421,
+      "test_f1_keywords_only": 0.7805
+    },
+    {
+      "aspect": "fit",
+      "C": 8.0,
+      "threshold": 0.3,
+      "tuning_oof_f1": 0.798,
+      "test_support": 155,
+      "test_f1": 0.7707,
+      "test_precision": 0.761,
+      "test_recall": 0.7806,
+      "test_f1_keywords_only": 0.6923
+    },
+    {
+      "aspect": "build_quality",
+      "C": 8.0,
+      "threshold": 0.38,
+      "tuning_oof_f1": 0.7105,
+      "test_support": 158,
+      "test_f1": 0.7049,
+      "test_precision": 0.644,
+      "test_recall": 0.7785,
+      "test_f1_keywords_only": 0.6687
+    },
+    {
+      "aspect": "connectivity",
+      "C": 8.0,
+      "threshold": 0.27,
+      "tuning_oof_f1": 0.7545,
+      "test_support": 100,
+      "test_f1": 0.7411,
+      "test_precision": 0.6694,
+      "test_recall": 0.83,
+      "test_f1_keywords_only": 0.7489
+    },
+    {
+      "aspect": "microphone",
+      "C": 8.0,
+      "threshold": 0.65,
+      "tuning_oof_f1": 0.7264,
+      "test_support": 48,
+      "test_f1": 0.75,
+      "test_precision": 0.6964,
+      "test_recall": 0.8125,
+      "test_f1_keywords_only": 0.7455
+    },
+    {
+      "aspect": "noise_cancellation",
+      "C": 8.0,
+      "threshold": 0.33,
+      "tuning_oof_f1": 0.8058,
+      "test_support": 62,
+      "test_f1": 0.816,
+      "test_precision": 0.8095,
+      "test_recall": 0.8226,
+      "test_f1_keywords_only": 0.816
+    },
+    {
+      "aspect": "value",
+      "C": 2.0,
+      "threshold": 0.33,
+      "tuning_oof_f1": 0.7865,
+      "test_support": 209,
+      "test_f1": 0.8,
+      "test_precision": 0.8058,
+      "test_recall": 0.7943,
+      "test_f1_keywords_only": 0.7989
+    }
+  ],
+  "test_macro_f1": 0.8006,
+  "test_macro_f1_keywords_only": 0.7864,
+  "all_aspects_at_least_0_70": true
+}

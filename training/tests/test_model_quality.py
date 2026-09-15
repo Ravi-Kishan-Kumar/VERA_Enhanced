@@ -134,3 +134,34 @@ def test_aspect_detector_rejects_wrong_aspect_order(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="aspect order"):
         AspectDetector(path)
+
+
+def test_cached_absa_reuses_results_across_runs(tmp_path):
+    from vera_training.signals import CachedABSA
+
+    class FakeABSA:
+        calls = 0
+
+        def process(self, clean_text, mentioned=None):
+            FakeABSA.calls += 1
+            return {"aspects": {"bass": {"sentiment": clean_text}}}
+
+    model = tmp_path / "absa_model.onnx"
+    model.write_bytes(b"model")
+    cache_file = tmp_path / "absa_cache.joblib"
+
+    first = CachedABSA(FakeABSA(), cache_file, model)
+    result = first.process("deep bass", {"bass": True})
+    result["aspects"]["bass"]["sentiment"] = "mutated"  # must not corrupt the cache
+    assert first.process("deep bass", {"bass": True})["aspects"]["bass"]["sentiment"] == "deep bass"
+    first.process("deep bass", {"bass": False})  # different mentions -> new inference
+    first.save()
+    assert FakeABSA.calls == 2
+
+    second = CachedABSA(FakeABSA(), cache_file, model)
+    second.process("deep bass", {"bass": True})
+    assert FakeABSA.calls == 2  # loaded from disk
+
+    model.write_bytes(b"retrained model")  # model change invalidates the cache
+    third = CachedABSA(FakeABSA(), cache_file, model)
+    assert third.cache == {}

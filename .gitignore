@@ -21,9 +21,10 @@ test.db
 data/raw/*
 data/processed/*
 data/models/*
-# Labels hold Amazon review text and raw LLM outputs; publish them as a HF dataset, not in git.
-# Only the agreement summary (gate G1 evidence) is tracked.
+# Raw LLM run outputs and intermediate label files stay local. Tracked: the consensus training
+# dataset (private repo; Amazon Reviews'23 text, research use) and the agreement summary (gate G1).
 data/labels/*
+!data/labels/labels_v1.jsonl
 !data/labels/agreement_report.json
 data/*.db
 model_cache/

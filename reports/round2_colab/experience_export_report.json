@@ -1,0 +1,12 @@
+{
+  "n": 32,
+  "fp32_max_abs_diff": 1.9073486328125e-06,
+  "int8_max_abs_diff": 1.4885759353637695,
+  "int8_mean_abs_diff": 0.27795436419546604,
+  "g2_passed": true,
+  "max_length": 512,
+  "int8_size_mb": 539.6,
+  "fp32_size_mb": 738.6,
+  "deployed_precision": "fp32",
+  "deployed_size_mb": 738.6
+}
