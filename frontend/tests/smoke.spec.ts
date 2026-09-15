@@ -34,11 +34,14 @@ test("analyzer, rankings, and methodology render honest real states", async ({ p
   await page.goto("/about")
   await expect(page.getByRole("heading", { name: "How VERA reads a review." })).toBeVisible()
   await expect(page.getByText(/reference annotations used for agreement were produced by Claude, an LLM — not by humans/i)).toBeVisible()
-  await expect(page.getByText("Round 1 · 1,059 labels")).toBeVisible()
+  await expect(page.getByText("Round 1 · 1,059 labels", { exact: true })).toBeVisible()
+  const pendingRound = page.getByText("Round 2", { exact: true }).locator("..")
+  await expect(pendingRound.getByText("Evaluation in progress")).toBeVisible()
+  await expect(pendingRound).toContainText("no published metrics yet")
 })
 
 test("all target viewports avoid horizontal page overflow", async ({ page }) => {
-  for (const width of [360, 768, 1024, 1440]) {
+  for (const width of [375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 800 })
     await page.goto("/")
     await expect(page.getByLabel("Review text")).toBeVisible()
@@ -88,6 +91,22 @@ test("rate limiting preserves input and honors Retry-After without auto-submit",
   expect(submissions).toBe(1)
 })
 
+test("review text validation is explicit and preserves the draft", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "Analyze review" }).click()
+  await expect(page.getByText("Enter a review before starting analysis.")).toBeVisible()
+
+  await page.getByLabel("Review text").fill("Too short")
+  await page.getByRole("button", { name: "Analyze review" }).click()
+  await expect(page.getByText("Use at least 20 characters after trimming whitespace.")).toBeVisible()
+
+  const longDraft = "a".repeat(10_001)
+  await page.getByLabel("Review text").fill(longDraft)
+  await page.getByRole("button", { name: "Analyze review" }).click()
+  await expect(page.getByText("Keep the review at or below 10,000 characters.")).toBeVisible()
+  await expect(page.getByLabel("Review text")).toHaveValue(longDraft)
+})
+
 test("unavailable readiness preserves a draft and recovers only on retry", async ({ page }) => {
   let available = false
   let submissions = 0
@@ -128,12 +147,15 @@ test("keyboard navigation, reduced motion, theme, command, and metadata work", a
 })
 
 test("completed analysis focuses its result and exposes chart alternatives", async ({ page }) => {
+  let statusChecks = 0
+  let resultFetches = 0
   await page.route("**/api/reviews", (route) => route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ review_id: 42, task_id: "test", status: "pending", message: "queued" }) }))
-  await page.route("**/api/reviews/42", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+  await page.route("**/api/reviews/42", (route) => { resultFetches += 1; return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
     id: 42, status: "done", text: "Fixture review text", star_rating: 5, helpful_votes: null, verified_purchase: null, product_title: null, product_asin: null,
     corrected_score: 3.2, interval_lower: 2.8, interval_upper: 3.6, confidence_value: 0.8, star_text_gap: 1.8, review_quality: 0.7,
-    aspects: null, flags: {}, explanation: "Mixed listening experience in this test fixture.", error_message: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
-  }) }))
+    aspects: { sound_quality: { detected: true, sentiment: "positive", confidence: 0.9 } }, flags: {}, explanation: "Mixed listening experience in this test fixture.", error_message: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
+  }) }) })
+  await page.route("**/api/reviews/42/status", (route) => { statusChecks += 1; const status = statusChecks === 1 ? "pending" : statusChecks === 2 ? "processing" : "done"; return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ review_id: 42, task_id: "test", status, message: status }) }) })
   await page.goto("/")
   await page.getByRole("button", { name: "Mixed reliability" }).click()
   await page.getByRole("button", { name: "Analyze review" }).click()
@@ -142,6 +164,28 @@ test("completed analysis focuses its result and exposes chart alternatives", asy
   await expect(page.getByText("Mixed listening experience in this test fixture.")).toBeVisible()
   await expect(page.getByRole("tab", { name: "Bars" })).toBeVisible()
   await expect(page.getByLabel("Aspect sentiment values")).toBeVisible()
+  await expect(page.getByText("Sound quality")).toBeVisible()
+  await expect(page.getByText("Battery life")).toHaveCount(0)
+  expect(statusChecks).toBe(3)
+  expect(resultFetches).toBe(1)
+})
+
+test("failed model work reports no score and does not expose internal details", async ({ page }) => {
+  await page.route("**/api/reviews", (route) => route.fulfill({ status: 202, contentType: "application/json", body: JSON.stringify({ review_id: 77, task_id: "failed-test", status: "pending", message: "queued" }) }))
+  await page.route("**/api/reviews/77", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+    id: 77, status: "failed", text: "Fixture review text", star_rating: 4, helpful_votes: null, verified_purchase: null, product_title: null, product_asin: null,
+    corrected_score: null, interval_lower: null, interval_upper: null, confidence_value: null, star_text_gap: null, review_quality: null,
+    aspects: null, flags: null, explanation: null, error_message: "ONNX model artifact missing at private path", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z",
+  }) }))
+  await page.route("**/api/reviews/77/status", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ review_id: 77, task_id: "failed-test", status: "failed", message: "failed" }) }))
+  await page.goto("/")
+  await page.getByRole("button", { name: "Mixed reliability" }).click()
+  await page.getByRole("button", { name: "Analyze review" }).click()
+  const alert = page.getByRole("main").getByRole("alert")
+  await expect(alert).toContainText("analysis model is not available")
+  await expect(alert).toContainText("No score was generated")
+  await expect(alert).not.toContainText("private path")
+  await expect(page.getByTestId("score-result")).toHaveCount(0)
 })
 
 test("light and dark screenshots remain stable", async ({ page }, testInfo) => {
