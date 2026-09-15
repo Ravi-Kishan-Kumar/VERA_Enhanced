@@ -71,7 +71,7 @@ export function ScoreResult({ review }: { review: Review }) {
         </div>
       </div>
       {review.interval_lower != null && review.interval_upper != null && corrected != null && <div className="mt-7"><ConfidenceInterval lower={review.interval_lower} upper={review.interval_upper} estimate={corrected}/></div>}
-      <p className="mt-5 border-l-2 border-primary/35 pl-4 text-sm leading-6 text-muted-foreground">{review.explanation || "The corrected score combines text experience, aspect sentiment, consistency, and review quality."}</p>
+      <p className="mt-5 border-l-2 border-primary/35 pl-4 text-sm leading-6 text-muted-foreground">{review.explanation || "The service did not return an explanation for this result."}</p>
       <dl className="mt-6 grid grid-cols-3 divide-x divide-border border-y border-border py-4">
         <div className="px-3 first:pl-0"><dt className="text-xs text-muted-foreground">Interval confidence</dt><dd className="mt-1 font-mono font-semibold tabular-nums">{review.confidence_value == null ? "—" : `${Math.round(review.confidence_value * 100)}%`}</dd></div>
         <div className="px-3"><dt className="text-xs text-muted-foreground">Quality weight</dt><dd className="mt-1 font-mono font-semibold tabular-nums">{score(review.review_quality)}</dd></div>

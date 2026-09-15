@@ -1,7 +1,10 @@
 export const ASPECTS = ["sound_quality", "bass", "battery_life", "comfort", "fit", "build_quality", "connectivity", "microphone", "noise_cancellation", "value"] as const;
 export type AspectKey = typeof ASPECTS[number];
 export type Sentiment = "positive" | "negative" | "neutral" | "not_mentioned";
-export type Aspect = { detected: boolean; sentiment: Sentiment; confidence: number };
+export type Aspect = {
+  detected: boolean; sentiment: Sentiment; confidence: number;
+  prob_neg?: number | null; prob_neu?: number | null; prob_pos?: number | null;
+};
 export type AspectSummary = { mention_count: number; detected_fraction: number; positive: number; negative: number; neutral: number; net_sentiment: number; dominant_sentiment: Sentiment };
 export type ReviewInput = { text: string; star_rating: number; helpful_votes: number | null; verified_purchase: boolean | null; product_title: string | null; product_asin: string | null };
 export type Review = ReviewInput & {
