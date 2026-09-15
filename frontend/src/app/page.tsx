@@ -15,9 +15,9 @@ const evidence = [
 export default function Home() {
   return (
     <>
-      <header className="pb-14 pt-12 sm:pb-16 sm:pt-20">
+      <header className="page-hero">
         <div className="font-mono text-xs uppercase tracking-[0.16em] text-primary">Review intelligence</div>
-        <h1 className="mt-5 max-w-5xl text-balance text-[clamp(2.75rem,7vw,6.4rem)] font-semibold leading-[0.92] tracking-[-0.065em]">See the experience behind the stars.</h1>
+        <h1 className="display-title mt-5 max-w-5xl">See the experience behind the stars.</h1>
         <p className="mt-6 max-w-3xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">VERA reads the experience behind an earbud review, then shows its corrected score, aspect evidence, and uncertainty in one clear result.</p>
         <div className="mt-9 grid overflow-hidden rounded-2xl border border-border bg-card sm:w-fit sm:grid-cols-3">
           {evidence.map(({ label, value, icon: Icon }) => <div key={label} className="flex min-w-48 items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><Icon className="size-4 text-primary" strokeWidth={1.5}/><div><p className="font-mono text-sm font-semibold tabular-nums">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div></div>)}

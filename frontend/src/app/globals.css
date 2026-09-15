@@ -38,6 +38,19 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
   --radius: 0.875rem;
+  --control-radius: 0.625rem;
+  --card-radius: 1.1rem;
+  --shell-radius: 1.35rem;
+  --surface-glass: oklch(1 0 0 / 72%);
+  --surface-glass-solid: oklch(0.99 0.003 250);
+  --surface-glass-border: oklch(1 0 0 / 64%);
+  --surface-glass-ring: oklch(0.208 0.042 265.755 / 5%);
+  --shadow-elevated: 0 1px 0 oklch(1 0 0 / 72%) inset,
+    0 12px 32px -16px oklch(0.208 0.042 265.755 / 20%);
+  --space-page-top: clamp(2rem, 6vw, 5rem);
+  --space-section: clamp(4.5rem, 9vw, 7rem);
+  --type-display: clamp(2.65rem, 7vw, 6.4rem);
+  --tracking-display: -0.06em;
 }
 
 .dark {
@@ -68,6 +81,12 @@
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+  --surface-glass: oklch(0.18 0.022 260 / 72%);
+  --surface-glass-solid: oklch(0.18 0.022 260);
+  --surface-glass-border: oklch(1 0 0 / 10%);
+  --surface-glass-ring: oklch(1 0 0 / 5%);
+  --shadow-elevated: 0 1px 0 oklch(1 0 0 / 6%) inset,
+    0 12px 32px -16px oklch(0 0 0 / 48%);
 }
 
 @theme inline {
@@ -112,6 +131,9 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-control: var(--control-radius);
+  --radius-card: var(--card-radius);
+  --radius-shell: var(--shell-radius);
 }
 
 @layer base {
@@ -145,6 +167,44 @@
 
   ::selection {
     background: oklch(0.55 0.17 262 / 20%);
+  }
+
+  :where(.font-mono, [data-metric]) {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+}
+
+@layer components {
+  .glass-elevated {
+    border: 1px solid var(--surface-glass-border);
+    background: var(--surface-glass);
+    box-shadow: var(--shadow-elevated), 0 0 0 1px var(--surface-glass-ring);
+    backdrop-filter: blur(18px) saturate(1.35);
+    -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  }
+
+  .display-title {
+    max-width: 18ch;
+    font-size: var(--type-display);
+    font-weight: 600;
+    line-height: 0.94;
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  .page-hero {
+    padding-block: var(--space-page-top) clamp(3rem, 6vw, 4.5rem);
+  }
+
+  .metric-number {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-elevated {
+    background: var(--surface-glass-solid);
   }
 }
 

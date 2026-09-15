@@ -49,7 +49,7 @@ export function ScoreResult({ review }: { review: Review }) {
   const delta = corrected == null ? null : corrected - review.star_rating
 
   return (
-    <section data-testid="score-result" className="rounded-2xl border border-white/60 bg-white/68 p-5 shadow-[0_20px_60px_-36px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:ring-white/5 sm:p-7" aria-labelledby={`result-${review.id}`}>
+    <section data-testid="score-result" className="glass-elevated rounded-card p-5 sm:p-7" aria-labelledby={`result-${review.id}`}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <span className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">Experience signal</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="size-3.5" strokeWidth={1.5}/>Analysis complete</span>
