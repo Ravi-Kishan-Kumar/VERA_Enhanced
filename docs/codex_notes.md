@@ -83,6 +83,51 @@ No Lighthouse audit, remote dependency scan, Docker runtime test, or trained-mod
 
 No claim is made that the remaining model or deployment gates have passed.
 
+## UI round 3 audit — 2026-09-15
+
+### Before-state evidence
+
+Captured the analyzer, rankings, product detail, methodology, not-found, route error, and loading
+states in light and dark themes at 375, 768, and 1440 CSS pixels. The 42 baseline images are in
+`frontend/test-results/audit-before/`. All API calls were intercepted; no request reached the live
+backend, worker, data, reports, or training processes. The capture ran sequentially in one browser.
+
+### Findings to correct
+
+1. **Aspect evidence is misleading when nothing is detected.** Product detail renders all ten
+   aspects as “Not mentioned”, even though the task and API semantics require showing only evidence
+   actually mentioned by reviews. This is especially noisy on 375 px screens.
+2. **The Round 1 benchmark table over-compresses at 375 px.** Its three columns remain in one narrow
+   row layout, shrinking labels and values below the otherwise comfortable reading scale. It needs
+   a mobile presentation that preserves comparison context without inventing data.
+3. **Benchmark content cannot represent an unfinished round.** It is a single object whose every
+   field requires a metric. A typed discriminated list is needed so Round 2 can be honestly marked
+   `pending` with no numeric placeholders.
+4. **Analyzer polling is heavier and less resilient than the API permits.** It repeatedly fetches
+   the full review every two seconds. The lightweight `/reviews/{id}/status` contract should drive
+   bounded exponential backoff, with the full record fetched only after completion.
+5. **Validation and degraded states are incomplete.** Empty/short/long text needs explicit inline
+   feedback independent of browser-native messages. Queue failure, network failure, 429 retry,
+   database readiness, and missing-model/worker failure need distinct, truthful copy; `/ready`
+   proves database readiness only and must not be presented as model readiness.
+6. **Elevated styling has multiple sources of truth.** Navigation, command palette, status notice,
+   and score result repeat one-off translucent fills, borders, blur, radii, and literal shadows.
+   They need shared semantic surface/radius/shadow/type/spacing tokens plus a solid fallback when
+   `backdrop-filter` is unavailable.
+7. **Some responsive controls and spacing are inefficient.** Ranking density controls remain visible
+   above the mobile card layout even though density does not affect those cards. The 375 px analyzer
+   also spends excessive vertical space between the floating navigation and the hero; this pushes
+   the primary task farther below the fold.
+8. **Typography needs systematic numeric treatment.** Most scores use the mono face, but tabular
+   numeral behavior is not guaranteed globally for metrics. Display wrapping is locally balanced
+   rather than defined once, leaving avoidable heading-orphan risk.
+
+The sampled declared token pairs pass WCAG AA contrast by calculation: light body 17.10:1, light
+muted 6.54:1, light primary link 4.77:1, light primary button 4.84:1; dark body 18.45:1, dark muted
+6.99:1, dark primary link/button 6.62:1. The palette therefore needs no speculative contrast shift.
+The existing `@axe-core/playwright` package is not installed; per the brief it will not be added as
+a new dependency, and an automated axe pass remains a follow-up.
+
 ## Follow-up: prompt cleanup
 
 At the user's explicit request, deleted the tracked `CODEX_PROMPT.md` and untracked
