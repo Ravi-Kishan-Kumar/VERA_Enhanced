@@ -40,9 +40,13 @@ def send_wakeup(job_id: str) -> None:
 
 
 def dispatch_pending(limit: int = 100) -> int:
-    """Send wake-ups for due jobs. Returns the number sent."""
+    """Send wake-ups for due jobs. Returns the number sent.
+
+    Jobs are marked dispatched and committed BEFORE publishing, so no row lock is held when
+    the worker receives the message (the worker skips locked rows). Jobs whose publish fails
+    are un-marked so the next poll retries them.
+    """
     now = datetime.now(UTC)
-    sent = 0
     with SessionLocal() as db:
         jobs = (
             db.query(Job)
@@ -59,11 +63,26 @@ def dispatch_pending(limit: int = 100) -> int:
             .limit(limit)
             .all()
         )
+        job_ids = [job.id for job in jobs]
         for job in jobs:
-            send_wakeup(job.id)
             job.last_dispatched_at = now
-            sent += 1
         db.commit()
+
+    sent = 0
+    failed: list[str] = []
+    for job_id in job_ids:
+        try:
+            send_wakeup(job_id)
+            sent += 1
+        except Exception:
+            failed.append(job_id)
+    if failed:
+        with SessionLocal() as db:
+            db.query(Job).filter(Job.id.in_(failed), Job.last_dispatched_at == now).update(
+                {Job.last_dispatched_at: None}, synchronize_session=False
+            )
+            db.commit()
+        raise RuntimeError(f"Broker unavailable; {len(failed)} wake-up(s) not sent")
     return sent
 
 

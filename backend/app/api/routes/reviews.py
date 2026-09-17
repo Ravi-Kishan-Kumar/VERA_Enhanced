@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from datetime import UTC, datetime
 
@@ -76,17 +77,20 @@ def submit_review(payload: ReviewCreate, db: Session = Depends(get_db)) -> Revie
     )
     db.add(review)
     db.flush()  # assigns review.id
-    job = Job(kind=JobKind.REVIEW.value, review_id=review.id)
+    # Mark the job dispatched in the same commit, then publish. Updating the row after
+    # publishing would hold its lock while the worker (skip_locked) receives the message,
+    # so the worker would skip the job and it would wait for the outbox re-send.
+    job = Job(kind=JobKind.REVIEW.value, review_id=review.id, last_dispatched_at=datetime.now(UTC))
     db.add(job)
     db.commit()
 
     try:
         send_wakeup(job.id)
-        job.last_dispatched_at = datetime.now(UTC)
-        db.commit()
     except Exception:
-        db.rollback()
         logger.warning("Broker unavailable for job %s; outbox will retry", job.id, exc_info=True)
+        with contextlib.suppress(Exception):
+            job.last_dispatched_at = None  # let the outbox re-send on its next poll
+            db.commit()
 
     return ReviewTaskStatus(
         review_id=review.id,

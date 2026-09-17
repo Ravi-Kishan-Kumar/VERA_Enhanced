@@ -90,3 +90,9 @@ All 8 artifacts present: `cd backend; ..\.venv\Scripts\python.exe -m app.ml.mode
 - Conformal on test (n=802): 80% -> 81.3%, 90% -> 91.0% (width 1.06), 95% -> 96.5%. Round-2 95% under-coverage resolved.
 - Learning curve (validation MAE 0.287 -> 0.274 at 25% -> 100% of train; train 0.232 -> 0.247): converging, still improving with data.
 - Next: update `frontend/src/content/benchmarks.ts` (rounds 2 and 3) from these reports; widen aspect C grid; test a trimmed feature set; HF upload + deploy.
+
+## Deployment 2026-09-17
+
+- Backend live on a free Hugging Face Gradio Space (ZeroGPU hardware): `https://prathvi9607-vera-api.hf.space`; models in private `prathvi9607/vera-models`; Supabase session pooler DB (migrations 001-002 applied). See `docs/deployment.md` and `deploy/hf-zerogpu/`.
+- Fixed a wake-up race exposed by the remote DB: the API and outbox updated `jobs.last_dispatched_at` after publishing, holding the row lock while the worker (`skip_locked`) received the message, so jobs waited ~60 s for the outbox. Now the mark is committed before publishing and un-marked on publish failure (tests added). Reviews complete in 4-6 s.
+- Pending: Vercel frontend (user), then set Space `CORS_ORIGINS` to the Vercel origin; UptimeRobot on `/ready`; rotate the Supabase password and HF tokens that were pasted in chat.

@@ -1,0 +1,26 @@
+# Hugging Face Gradio Space (ZeroGPU hardware) runtime for the VERA API + worker.
+# The Space image preinstalls gradio (sdk_version in README.md) and `spaces`; their web stack
+# (fastapi, starlette, pydantic, httpx, uvicorn, huggingface_hub) is left unpinned here so pip
+# resolves versions compatible with gradio. ML libraries stay pinned: the artifacts were built
+# with them (scikit-learn version guard, xgboost JSON format, ONNX opset, tokenizers JSON).
+onnxruntime==1.19.0
+tokenizers==0.20.0
+scikit-learn==1.5.2
+xgboost==2.1.1
+joblib==1.4.2
+numpy==1.26.4
+pandas==2.2.3
+pyarrow==17.0.0
+langdetect==1.0.9
+huggingface_hub>=0.28.1
+fastapi
+uvicorn[standard]
+celery==5.4.0
+redis==5.1.1
+sqlalchemy==2.0.35
+alembic==1.13.3
+psycopg2-binary==2.9.9
+pydantic>=2.9,<2.12
+pydantic-settings>=2.5
+python-dotenv
+httpx

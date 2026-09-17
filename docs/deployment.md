@@ -1,5 +1,34 @@
 # Deployment
 
+## Current free deployment (2026-09-17)
+
+| Part | Service | Address |
+|---|---|---|
+| API + worker + Redis | Hugging Face **Gradio Space on ZeroGPU hardware** (free) | `https://prathvi9607-vera-api.hf.space` (Space `prathvi9607/vera-api`) |
+| Model artifacts (round 3) | Hugging Face private model repo | `prathvi9607/vera-models` |
+| Database | Supabase free, session pooler (`sslmode=require`) | project `fjwiqiuhwkdscbpskyha` |
+| Frontend | Vercel Hobby, root directory `frontend/` | set `API_URL` to the Space origin |
+
+Why ZeroGPU: Docker Spaces and CPU-basic Gradio Spaces now require PRO (the Hub API returns
+402 "hosting Gradio and Docker Spaces on free cpu-basic requires a PRO subscription"), while
+Gradio on ZeroGPU is free. ZeroGPU stops apps that never report startup; `deploy/hf-zerogpu/app.py`
+serves the existing FastAPI app with uvicorn and calls `spaces.zero.startup()` itself. It defines one
+unused `@spaces.GPU` placeholder (required for the report). Inference stays on CPU (onnxruntime), so
+no GPU quota is consumed. The container limit observed was ~104 GB RAM.
+
+Redeploy the Space: copy `deploy/hf-zerogpu/{app.py,README.md,packages.txt,requirements.txt}` plus
+`backend/app`, `backend/migrations`, `backend/alembic.ini` into a folder and upload it to the Space
+(`HfApi.upload_folder(..., repo_type="space", delete_patterns=["backend/**"])`). Space secrets:
+`DATABASE_URL`, `HF_MODEL_REPO`, `HF_TOKEN` (read), `SECRET_KEY`, `CORS_ORIGINS`.
+`deploy/hf-zerogpu/requirements.txt` leaves the web stack unpinned for gradio 5.49.1
+(fastapi 0.141, pydantic 2.11, huggingface_hub 0.36); the backend suite passes with those versions.
+Verified: `/health` healthy with all 9 artifacts, `/ready` ready, reviews complete in 4-6 s.
+
+Risks: ZeroGPU is intended for GPU apps and its policy may change; the Space sleeps when idle
+(first request after wake reloads models); Space storage is ephemeral (reviews live in Supabase).
+
+## Original Docker-based plan (requires Hugging Face PRO)
+
 This is a deployment package, not evidence of a running production service. Obtain the user's
 approval before creating resources, uploading artifacts, or pushing a Space. Do not execute these
 steps on the shared machine while Claude owns training. Model acceptance remains separate from

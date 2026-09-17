@@ -126,3 +126,40 @@ def test_outbox_dispatches_due_jobs_once(db: Session, monkeypatch: pytest.Monkey
     assert outbox.dispatch_pending() == 1
     assert outbox.dispatch_pending() == 0  # within the re-dispatch window
     assert sent == [job.id]
+
+
+def test_outbox_commits_dispatch_mark_before_publishing(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The worker skips locked rows, so no job lock may be held when a wake-up is published."""
+    _, job = _review_job(db)
+    seen: list[datetime | None] = []
+
+    def publish(job_id: str) -> None:
+        with tasks.SessionLocal() as other:  # a separate session sees only committed state
+            seen.append(other.get(Job, job_id).last_dispatched_at)  # type: ignore[union-attr]
+
+    monkeypatch.setattr(outbox, "send_wakeup", publish)
+
+    assert outbox.dispatch_pending() == 1
+    assert seen and seen[0] is not None
+
+
+def test_outbox_unmarks_jobs_whose_publish_failed(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, job = _review_job(db)
+
+    def unavailable(_: str) -> None:
+        raise ConnectionError("redis unavailable")
+
+    monkeypatch.setattr(outbox, "send_wakeup", unavailable)
+    with pytest.raises(RuntimeError, match="Broker unavailable"):
+        outbox.dispatch_pending()
+    db.expire_all()
+    assert db.get(Job, job.id).last_dispatched_at is None  # type: ignore[union-attr]
+
+    sent: list[str] = []
+    monkeypatch.setattr(outbox, "send_wakeup", sent.append)
+    assert outbox.dispatch_pending() == 1  # retried on the next poll
+    assert sent == [job.id]
