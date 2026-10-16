@@ -84,21 +84,55 @@ export function ScoreResult({ review }: { review: Review }) {
 
 export function QualityFlags({ review }: { review: Review }) {
   const flags = review.flags || {}
+  const sarcasmDetected = flags.sarcasm_detected === true
+  const sarcasmMarkers = Array.isArray(flags.sarcasm_markers) ? flags.sarcasm_markers as string[] : []
+  const defectMentions = Array.isArray(flags.defect_mentions) ? flags.defect_mentions as string[] : []
+  const sarcasmConfidence = typeof flags.sarcasm_confidence === "number" ? flags.sarcasm_confidence : 0
+  const sarcasmOverride = flags.sarcasm_override === true
+
   const items: string[] = []
   if (flags.is_english === false) items.push("Non-English text: this model is calibrated for English.")
   if (flags.is_earbud === false) items.push("This review may be outside the earbud domain.")
-  if (flags.star_inflated === true) items.push("The star rating is higher than the text-derived experience.")
+  if (flags.star_inflated === true && !sarcasmDetected) items.push("The star rating is higher than the text-derived experience.")
   if (flags.star_deflated === true) items.push("The star rating is lower than the text-derived experience.")
   if (flags.has_url === true) items.push("The review contains a link.")
   if (Array.isArray(flags.imputed_fields) && flags.imputed_fields.length) items.push(`Missing metadata estimated from training data: ${flags.imputed_fields.filter((value): value is string => typeof value === "string").map((value) => value.replaceAll("_", " ")).join(", ")}.`)
 
   return (
-    <section className="rounded-card border border-border bg-card p-5 sm:p-6" aria-labelledby={`quality-${review.id}`}>
-      <div className="flex gap-3">
-        {items.length ? <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.5}/> : <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5}/>} 
-        <div><h3 id={`quality-${review.id}`} className="text-base font-semibold">Reading this result</h3>{items.length ? <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No additional quality flags were returned.</p>}</div>
-      </div>
-      <p className="mt-4 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">Quality is a weighting signal. It does not verify a purchase or prove that a review is authentic.</p>
-    </section>
+    <>
+      {sarcasmDetected && (
+        <section className="rounded-card border-2 border-amber-500/40 bg-amber-500/5 p-5 sm:p-6" aria-labelledby={`sarcasm-${review.id}`}>
+          <div className="flex gap-3">
+            <AlertTriangle className="mt-0.5 size-6 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={2}/>
+            <div>
+              <h3 id={`sarcasm-${review.id}`} className="text-base font-bold text-amber-700 dark:text-amber-300">⚠️ Sarcasm / Irony Detected</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Agent 4 detected rhetorical positive praise contradicted by explicit product defects ({Math.round(sarcasmConfidence * 100)}% confidence).
+                {sarcasmOverride && " The fused score has been overridden with a calibrated negative value."}
+              </p>
+              {sarcasmMarkers.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Sarcastic markers found:</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">{sarcasmMarkers.map((m) => <span key={m} className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">&ldquo;{m}&rdquo;</span>)}</div>
+                </div>
+              )}
+              {defectMentions.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">Defect reports found:</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">{defectMentions.map((d) => <span key={d} className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:text-red-200">{d}</span>)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+      <section className="rounded-card border border-border bg-card p-5 sm:p-6" aria-labelledby={`quality-${review.id}`}>
+        <div className="flex gap-3">
+          {items.length ? <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.5}/> : <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5}/>} 
+          <div><h3 id={`quality-${review.id}`} className="text-base font-semibold">Reading this result</h3>{items.length ? <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No additional quality flags were returned.</p>}</div>
+        </div>
+        <p className="mt-4 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">Quality is a weighting signal. It does not verify a purchase or prove that a review is authentic.</p>
+      </section>
+    </>
   )
 }

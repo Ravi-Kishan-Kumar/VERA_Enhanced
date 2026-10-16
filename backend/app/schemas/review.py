@@ -31,6 +31,7 @@ class ReviewCreate(BaseModel):
     verified_purchase: bool | None = None
     product_title: str | None = Field(default=None, max_length=1_000)
     product_asin: str | None = Field(default=None, max_length=20)
+    product_category: str = Field(default="earbuds", max_length=20)
 
     @field_validator("text")
     @classmethod
@@ -67,6 +68,7 @@ class ReviewResponse(BaseModel):
     id: int
     text: str
     star_rating: float
+    product_category: str = "earbuds"
     helpful_votes: int | None
     verified_purchase: bool | None
     product_title: str | None

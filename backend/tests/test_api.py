@@ -190,7 +190,14 @@ def test_product_detail_paginates_completed_reviews(client: TestClient, db: Sess
     assert client.get("/api/products/missing").status_code == 404
 
 
-def test_health_is_always_200_and_reports_missing_artifacts(client: TestClient) -> None:
+def test_health_is_always_200_and_reports_missing_artifacts(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: "Path"
+) -> None:
+    from pathlib import Path
+    empty_dir = tmp_path / "no-models"
+    empty_dir.mkdir()
+    monkeypatch.setattr("app.api.routes.health.settings.MODEL_DIR", empty_dir)
+
     response = client.get("/health")
 
     assert response.status_code == 200
@@ -198,3 +205,4 @@ def test_health_is_always_200_and_reports_missing_artifacts(client: TestClient) 
     assert body["database"] is True
     assert body["status"] == "degraded"
     assert not any(body["model_artifacts"].values())
+

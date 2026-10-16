@@ -47,10 +47,20 @@ function AspectChips({ product, limit = 2 }: { product: Product; limit?: number 
 function ErrorPanel({ message, retry }: { message: string; retry: () => void }) {
   return <div role="alert" className="panel p-8 text-center"><h2 className="font-heading text-2xl font-semibold">Rankings are temporarily unavailable</h2><p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">{message}</p><Button variant="outline" className="mt-5" onClick={retry}>Try again</Button></div>
 }
+const COLUMN_WIDTHS: Record<string, string> = {
+  rank: "w-[75px] min-w-[75px]",
+  product: "w-[310px] max-w-[310px]",
+  corrected_score: "w-[145px] min-w-[145px]",
+  uncertainty: "w-[110px] min-w-[110px]",
+  review_count: "w-[110px] min-w-[110px]",
+  aspects: "min-w-[180px]",
+  compare: "w-[90px] min-w-[90px]",
+}
 
 export function ProductRankings() {
   const [sortBy, setSortBy] = useState<SortKey>("corrected_score")
   const [order, setOrder] = useState<Order>("desc")
+  const [category, setCategory] = useState<"all" | "earbuds" | "headphones">("all")
   const [page, setPage] = useState(0)
   const [density, setDensity] = useState<Density>("comfortable")
   const [data, setData] = useState<{ items: Product[]; total: number } | null>(null)
@@ -59,39 +69,311 @@ export function ProductRankings() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const query = new URLSearchParams({ sort_by: sortBy, order, limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) })
-    apiPage<Product>(`/products?${query}`, { signal: controller.signal }).then((result) => { setData(result); setError("") }).catch((cause) => { if (!controller.signal.aborted) setError(errorMessage(cause)) })
+    const query = new URLSearchParams({
+      sort_by: sortBy,
+      order,
+      limit: String(PAGE_SIZE),
+      offset: String(page * PAGE_SIZE),
+    })
+    if (category !== "all") {
+      query.set("category", category)
+    }
+    apiPage<Product>(`/products?${query}`, { signal: controller.signal })
+      .then((result) => {
+        setData(result)
+        setError("")
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setError(errorMessage(cause))
+      })
     return () => controller.abort()
-  }, [sortBy, order, page, reload])
+  }, [sortBy, order, category, page, reload])
 
-  const sort = useCallback((key: SortKey) => {
-    setData(null); setError(""); setPage(0)
-    setOrder((current) => key === sortBy ? current === "desc" ? "asc" : "desc" : sortable[key].defaultOrder)
-    setSortBy(key)
-  }, [sortBy])
+  const sort = useCallback(
+    (key: SortKey) => {
+      setData(null)
+      setError("")
+      setPage(0)
+      setOrder((current) =>
+        key === sortBy ? (current === "desc" ? "asc" : "desc") : sortable[key].defaultOrder
+      )
+      setSortBy(key)
+    },
+    [sortBy]
+  )
 
-  const columns = useMemo<ColumnDef<Product>[]>(() => [
-    { id: "rank", header: "Rank", cell: ({ row }) => <div className="metric-number flex items-center gap-2"><strong>#{row.original.rank_position ?? "N/A"}</strong><RankChange current={row.original.rank_position} previous={row.original.previous_rank_position}/></div> },
-    { id: "product", header: "Product", cell: ({ row }) => <Link href={`/products/${encodeURIComponent(row.original.asin)}`} className="grid max-w-80 gap-0.5 rounded-md font-medium hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="truncate">{row.original.title || "Untitled product"}</span><span className="font-mono text-[11px] font-normal text-muted-foreground">{row.original.asin}</span></Link> },
-    { id: "corrected_score", header: () => <SortButton column="corrected_score" sortBy={sortBy} order={order} onSort={sort}/>, cell: ({ row }) => <div><strong className="metric-number text-base tabular-nums text-primary">{displayScore(row.original.corrected_score)}</strong><span className="metric-number ml-1.5 text-xs text-muted-foreground">from {displayScore(row.original.star_average)}</span></div> },
-    { id: "uncertainty", header: () => <SortButton column="uncertainty" sortBy={sortBy} order={order} onSort={sort}/>, cell: ({ row }) => <span className="metric-number tabular-nums">±{displayScore(row.original.uncertainty)}</span> },
-    { id: "review_count", header: () => <SortButton column="review_count" sortBy={sortBy} order={order} onSort={sort}/>, cell: ({ row }) => <span className="metric-number tabular-nums">{row.original.review_count.toLocaleString()}</span> },
-    { id: "aspects", header: "Strongest signals", cell: ({ row }) => <AspectChips product={row.original}/> },
-  ], [order, sort, sortBy])
+  const columns = useMemo<ColumnDef<Product>[]>(
+    () => [
+      {
+        id: "rank",
+        header: "Rank",
+        cell: ({ row }) => (
+          <div className="metric-number flex items-center gap-2">
+            <strong>#{row.original.rank_position ?? "N/A"}</strong>
+            <RankChange
+              current={row.original.rank_position}
+              previous={row.original.previous_rank_position}
+            />
+          </div>
+        ),
+      },
+      {
+        id: "product",
+        header: "Product",
+        cell: ({ row }) => (
+          <div className="min-w-0 max-w-[310px] overflow-hidden grid gap-0.5">
+            <Link
+              href={`/products/${encodeURIComponent(row.original.asin)}`}
+              className="rounded-md font-medium hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-0 block"
+              title={row.original.title || "Untitled product"}
+            >
+              <span className="truncate block font-medium">{row.original.title || "Untitled product"}</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] font-normal text-muted-foreground">
+                {row.original.asin}
+              </span>
+              <Badge variant="outline" className="text-[10px] py-0 px-1.5 capitalize">
+                {row.original.product_category || "earbuds"}
+              </Badge>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "corrected_score",
+        header: () => (
+          <SortButton column="corrected_score" sortBy={sortBy} order={order} onSort={sort} />
+        ),
+        cell: ({ row }) => (
+          <div>
+            <strong className="metric-number text-base tabular-nums text-primary">
+              {displayScore(row.original.corrected_score)}
+            </strong>
+            <span className="metric-number ml-1.5 text-xs text-muted-foreground">
+              from {displayScore(row.original.star_average)}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "uncertainty",
+        header: () => (
+          <SortButton column="uncertainty" sortBy={sortBy} order={order} onSort={sort} />
+        ),
+        cell: ({ row }) => (
+          <span className="metric-number tabular-nums">
+            ±{displayScore(row.original.uncertainty)}
+          </span>
+        ),
+      },
+      {
+        id: "review_count",
+        header: () => (
+          <SortButton column="review_count" sortBy={sortBy} order={order} onSort={sort} />
+        ),
+        cell: ({ row }) => (
+          <span className="metric-number tabular-nums">
+            {row.original.review_count.toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        id: "aspects",
+        header: "Strongest signals",
+        cell: ({ row }) => <AspectChips product={row.original} />,
+      },
+      {
+        id: "compare",
+        header: "Compare",
+        cell: ({ row }) => (
+          <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Link href={`/compare?asin1=${encodeURIComponent(row.original.asin)}`}>
+              Compare
+            </Link>
+          </Button>
+        ),
+      },
+    ],
+    [order, sort, sortBy]
+  )
   // TanStack Table intentionally returns callable table methods; React Compiler skips this hook.
   // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({ data: data?.items ?? [], columns, getCoreRowModel: getCoreRowModel(), manualSorting: true })
+  const table = useReactTable({
+    data: data?.items ?? [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualSorting: true,
+  })
 
-  if (error) return <ErrorPanel message={error} retry={() => { setError(""); setData(null); setReload((value) => value + 1) }}/>
-  if (!data) return <div aria-label="Loading rankings" role="status" className="grid gap-3">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-16 w-full rounded-xl"/>)}</div>
-  if (data.total === 0) return <div className="panel p-10 text-center"><h2 className="font-heading text-2xl font-semibold">No ranked products yet</h2><p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">Products appear after a completed review includes a product ASIN.</p><Button asChild className="mt-5"><Link href="/">Analyze a review</Link></Button></div>
+  if (error)
+    return (
+      <ErrorPanel
+        message={error}
+        retry={() => {
+          setError("")
+          setData(null)
+          setReload((value) => value + 1)
+        }}
+      />
+    )
+  if (!data)
+    return (
+      <div aria-label="Loading rankings" role="status" className="grid gap-3">
+        {Array.from({ length: 6 }, (_, index) => (
+          <Skeleton key={index} className="h-16 w-full rounded-xl" />
+        ))}
+      </div>
+    )
+  if (data.total === 0)
+    return (
+      <div className="panel p-10 text-center">
+        <h2 className="font-heading text-2xl font-semibold">No ranked products yet</h2>
+        <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
+          Products appear after a completed review includes a product ASIN.
+        </p>
+        <Button asChild className="mt-5">
+          <Link href="/">Analyze a review</Link>
+        </Button>
+      </div>
+    )
 
   const pages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
   return (
     <section className="panel overflow-hidden" aria-labelledby="rankings-table-title">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5"><div><h2 id="rankings-table-title" className="font-heading text-xl font-semibold">Current ranking</h2><p className="mt-1 text-xs text-muted-foreground">{data.total.toLocaleString()} products, page {page + 1} of {pages}</p></div><div className="hidden items-center gap-2 md:flex"><SlidersHorizontal className="size-4 text-muted-foreground" strokeWidth={1.5}/><ToggleGroup type="single" value={density} onValueChange={(value) => { if (value) setDensity(value as Density) }} aria-label="Table density"><ToggleGroupItem value="comfortable" className="min-h-9 px-3 text-xs">Comfortable</ToggleGroupItem><ToggleGroupItem value="compact" className="min-h-9 px-3 text-xs">Compact</ToggleGroupItem></ToggleGroup></div></div>
-      <div className="hidden bg-card md:block"><Table><caption className="sr-only">Earbud products ranked by VERA corrected experience score</caption><TableHeader><TableRow>{table.getHeaderGroups()[0].headers.map((header) => <TableHead key={header.id} className="whitespace-nowrap">{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>)}</TableRow></TableHeader><TableBody>{table.getRowModel().rows.map((row) => <TableRow key={row.id} className={cn("hover:bg-muted/45", density === "compact" && "h-12")}>{row.getVisibleCells().map((cell) => <TableCell key={cell.id} className={cn("py-4", density === "compact" && "py-2")}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>)}</TableBody></Table></div>
-      <div className="divide-y divide-border md:hidden">{data.items.map((product) => <Link key={product.asin} href={`/products/${encodeURIComponent(product.asin)}`} className="block bg-card p-4 transition-colors duration-150 hover:bg-muted/45"><div className="flex items-start justify-between gap-4"><div><p className="line-clamp-2 font-medium">{product.title || "Untitled product"}</p><p className="mt-1 font-mono text-[11px] text-muted-foreground">{product.asin}</p></div><div className="text-right"><p className="metric-number text-xl font-semibold text-primary">{displayScore(product.corrected_score)}</p><p className="text-[10px] text-muted-foreground">VERA score</p></div></div><div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><strong className="metric-number text-foreground">#{product.rank_position ?? "N/A"}</strong><RankChange current={product.rank_position} previous={product.previous_rank_position}/></span><span className="metric-number">±{displayScore(product.uncertainty)}, {product.review_count} reviews</span></div><div className="mt-3"><AspectChips product={product} limit={3}/></div></Link>)}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
+        <div>
+          <h2 id="rankings-table-title" className="font-heading text-xl font-semibold">
+            Current ranking
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {data.total.toLocaleString()} products, page {page + 1} of {pages}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Category Filter Pills */}
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+            <button
+              onClick={() => {
+                setCategory("all")
+                setPage(0)
+                setData(null)
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-colors",
+                category === "all" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All
+            </button>
+            <button
+              onClick={() => {
+                setCategory("earbuds")
+                setPage(0)
+                setData(null)
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-colors",
+                category === "earbuds" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Earbuds
+            </button>
+            <button
+              onClick={() => {
+                setCategory("headphones")
+                setPage(0)
+                setData(null)
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-colors",
+                category === "headphones" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Headphones
+            </button>
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <SlidersHorizontal className="size-4 text-muted-foreground" strokeWidth={1.5} />
+            <ToggleGroup
+              type="single"
+              value={density}
+              onValueChange={(value) => {
+                if (value) setDensity(value as Density)
+              }}
+              aria-label="Table density"
+            >
+              <ToggleGroupItem value="comfortable" className="min-h-9 px-3 text-xs">
+                Comfortable
+              </ToggleGroupItem>
+              <ToggleGroupItem value="compact" className="min-h-9 px-3 text-xs">
+                Compact
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
+      </div>
+      <div className="hidden bg-card md:block overflow-x-auto">
+        <Table className="table-fixed w-full">
+          <caption className="sr-only">Earbud products ranked by VERA corrected experience score</caption>
+          <TableHeader>
+            <TableRow>
+              {table.getHeaderGroups()[0].headers.map((header) => (
+                <TableHead
+                  key={header.id}
+                  className={cn("whitespace-nowrap", COLUMN_WIDTHS[header.id])}
+                >
+                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id} className={cn("hover:bg-muted/45", density === "compact" && "h-12")}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell
+                    key={cell.id}
+                    className={cn("py-4 overflow-hidden", density === "compact" && "py-2", COLUMN_WIDTHS[cell.column.id])}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="divide-y divide-border md:hidden">
+        {data.items.map((product) => (
+          <Link
+            key={product.asin}
+            href={`/products/${encodeURIComponent(product.asin)}`}
+            className="block bg-card p-4 transition-colors duration-150 hover:bg-muted/45"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="line-clamp-2 font-medium">{product.title || "Untitled product"}</p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">{product.asin}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="metric-number text-xl font-semibold text-primary">{displayScore(product.corrected_score)}</p>
+                <p className="text-[10px] text-muted-foreground">VERA score</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <strong className="metric-number text-foreground">#{product.rank_position ?? "N/A"}</strong>
+                <RankChange current={product.rank_position} previous={product.previous_rank_position} />
+              </span>
+              <span className="metric-number">±{displayScore(product.uncertainty)}, {product.review_count} reviews</span>
+            </div>
+            <div className="mt-3">
+              <AspectChips product={product} limit={3} />
+            </div>
+          </Link>
+        ))}
+      </div>
       <nav className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-4 py-4 sm:px-5" aria-label="Rankings pagination"><span className="text-xs text-muted-foreground">Showing {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, data.total)} of {data.total}</span><div className="flex gap-2"><Button variant="outline" disabled={page === 0} onClick={() => { setData(null); setPage((value) => value - 1) }}><ArrowLeft/>Previous</Button><Button variant="outline" disabled={page + 1 >= pages} onClick={() => { setData(null); setPage((value) => value + 1) }}>Next<ArrowRight/></Button></div></nav>
     </section>
   )

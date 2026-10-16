@@ -1,0 +1,110 @@
+{
+  "products_evaluated": 426,
+  "spearman_rank_correlation": 0.8791,
+  "spearman_p_value": 1.454050620310133e-138,
+  "mean_absolute_rank_shift": 45.58,
+  "falsely_inflated_products": [
+    {
+      "asin": "B07G7Z4135",
+      "title": "Bluetooth Headband Headphones Wireless Sleep Headphones, Mus",
+      "reviews": 3,
+      "raw_stars": 3.33,
+      "eb_score": 2.49,
+      "raw_rank": 146,
+      "eb_rank": 364,
+      "rank_drop": 218
+    },
+    {
+      "asin": "B0C337RV7Q",
+      "title": "Beats Solo3 Wireless On-Ear Headphones - Apple W1 Headphone ",
+      "reviews": 9,
+      "raw_stars": 3.33,
+      "eb_score": 2.64,
+      "raw_rank": 132,
+      "eb_rank": 334,
+      "rank_drop": 202
+    },
+    {
+      "asin": "B0C1ZHJRGB",
+      "title": "Wireless Earbuds Bluetooth Headphones 48hrs Play Back Sport ",
+      "reviews": 3,
+      "raw_stars": 3.33,
+      "eb_score": 2.66,
+      "raw_rank": 133,
+      "eb_rank": 332,
+      "rank_drop": 199
+    },
+    {
+      "asin": "B0BT9KCJC4",
+      "title": "Bose SoundLink around-ear wireless headphones II- White",
+      "reviews": 3,
+      "raw_stars": 3.33,
+      "eb_score": 2.75,
+      "raw_rank": 126,
+      "eb_rank": 290,
+      "rank_drop": 164
+    },
+    {
+      "asin": "B0816GVJVW",
+      "title": "Soundcore Upgraded, Anker Liberty Neo True Wireless Earbuds,",
+      "reviews": 4,
+      "raw_stars": 3.25,
+      "eb_score": 2.7,
+      "raw_rank": 152,
+      "eb_rank": 313,
+      "rank_drop": 161
+    }
+  ],
+  "underrated_gems_promoted": [
+    {
+      "asin": "B002DS4HTM",
+      "title": "Creative Fatal1ty Gaming Headset",
+      "reviews": 3,
+      "raw_stars": 2.33,
+      "eb_score": 2.96,
+      "raw_rank": 330,
+      "eb_rank": 121,
+      "rank_gain": 209
+    },
+    {
+      "asin": "B0148NPJ78",
+      "title": "Logitech G933 Artemis Spectrum \u2013 Wireless RGB 7.1 Dolby and ",
+      "reviews": 3,
+      "raw_stars": 2.67,
+      "eb_score": 3.01,
+      "raw_rank": 280,
+      "eb_rank": 107,
+      "rank_gain": 173
+    },
+    {
+      "asin": "B08BG7J2MN",
+      "title": "Aftershokz Aeropex Mini (Rebranded as Shokz OpenRun Mini) Bo",
+      "reviews": 5,
+      "raw_stars": 2.2,
+      "eb_score": 2.9,
+      "raw_rank": 345,
+      "eb_rank": 178,
+      "rank_gain": 167
+    },
+    {
+      "asin": "B0BTBTBVQD",
+      "title": "True Wireless Earbuds - FIIL CC2 True Wireless Earbuds, Blue",
+      "reviews": 3,
+      "raw_stars": 2.67,
+      "eb_score": 3.01,
+      "raw_rank": 269,
+      "eb_rank": 105,
+      "rank_gain": 164
+    },
+    {
+      "asin": "B01HETFQA8",
+      "title": "Bose Quietcontrol 30 Wireless Headphones, Noise Cancelling -",
+      "reviews": 5,
+      "raw_stars": 1.6,
+      "eb_score": 2.81,
+      "raw_rank": 410,
+      "eb_rank": 258,
+      "rank_gain": 152
+    }
+  ]
+}

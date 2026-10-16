@@ -21,6 +21,8 @@ test.db
 data/raw/*
 data/processed/*
 data/models/*
+data/models-test/
+data/models*/*
 # Raw LLM run outputs and intermediate label files stay local. Tracked: the consensus training
 # dataset (private repo; Amazon Reviews'23 text, research use) and the agreement summary (gate G1).
 data/labels/*

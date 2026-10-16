@@ -17,6 +17,12 @@ INCLUDE_FILES = (
     "PRD.md",
 )
 
+# Headphone-specific frozen artifacts (included when present)
+HEADPHONE_FILES = (
+    "data/labels/run_headphones_primary.json",
+    "data/processed/headphone_labeling_pool.parquet",
+)
+
 
 def main() -> None:
     target = ROOT / "dist" / "vera_colab_bundle.zip"
@@ -31,6 +37,13 @@ def main() -> None:
                     archive.write(path, path.relative_to(ROOT))
         for name in INCLUDE_FILES:
             archive.write(ROOT / name, name)
+        for name in HEADPHONE_FILES:
+            p = ROOT / name
+            if p.exists():
+                archive.write(p, name)
+                print(f"  + included {name}")
+            else:
+                print(f"  - skipped (not found): {name}")
     print(f"wrote {target} ({target.stat().st_size / 1e6:.1f} MB)")
 
 

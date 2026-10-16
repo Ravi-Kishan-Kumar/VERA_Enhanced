@@ -17,6 +17,8 @@ class ProductResponse(BaseModel):
 
     asin: str
     title: str | None
+    product_category: str = "earbuds"
+    price_inr: float | None = None
     corrected_score: float | None
     uncertainty: float | None
     trust_weighted_score: float | None

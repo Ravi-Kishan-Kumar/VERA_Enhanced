@@ -35,7 +35,9 @@ def _get_review_or_404(db: Session, review_id: int) -> Review:
     return review
 
 
-def _ensure_product_shell(db: Session, asin: str, title: str | None) -> None:
+def _ensure_product_shell(
+    db: Session, asin: str, title: str | None, category: str = "earbuds"
+) -> None:
     """Create or update the product row without losing concurrent first reviews."""
     product = db.get(Product, asin)
     if product is None:
@@ -43,14 +45,17 @@ def _ensure_product_shell(db: Session, asin: str, title: str | None) -> None:
             # The savepoint lets a concurrent ASIN insert fail locally while
             # preserving the review/job transaction that follows it.
             with db.begin_nested():
-                db.add(Product(asin=asin, title=title))
+                db.add(Product(asin=asin, title=title, product_category=category))
                 db.flush()
         except IntegrityError:
             product = db.get(Product, asin)
             if product is None:
                 raise
-    if product is not None and title and not product.title:
-        product.title = title
+    if product is not None:
+        if title and not product.title:
+            product.title = title
+        if category and product.product_category == "earbuds" and category != "earbuds":
+            product.product_category = category
 
 
 @router.post("", response_model=ReviewTaskStatus, status_code=status.HTTP_202_ACCEPTED)
@@ -64,11 +69,12 @@ def submit_review(payload: ReviewCreate, db: Session = Depends(get_db)) -> Revie
     """
     asin = payload.product_asin
     if asin:
-        _ensure_product_shell(db, asin, payload.product_title)
+        _ensure_product_shell(db, asin, payload.product_title, payload.product_category)
 
     review = Review(
         text=payload.text,
         star_rating=payload.star_rating,
+        product_category=payload.product_category,
         helpful_votes=payload.helpful_votes,
         verified_purchase=payload.verified_purchase,
         product_title=payload.product_title,

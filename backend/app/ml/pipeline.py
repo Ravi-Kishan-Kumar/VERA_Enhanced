@@ -1,8 +1,12 @@
 """VERA pipeline orchestrator (PRD §8.2).
 
-Runs Agents 1–6, fuses their signals with Agent 7, and wraps the point estimate
-in a conformal interval. Product-level Empirical Bayes aggregation runs
-separately (``app.worker.tasks.aggregate_products_task``) because it needs every
+Runs Agents 1–6 (including Agent 4 Sarcasm Detector), fuses their signals with
+Agent 7, and wraps the point estimate in a conformal interval. When sarcasm is
+detected with high confidence, the fused score is overridden with a calibrated
+negative value to prevent positive score hijacking.
+
+Product-level Empirical Bayes aggregation runs separately
+(``app.worker.tasks.aggregate_products_task``) because it needs every
 review of every product.
 
 Model policy: :class:`VERAPipeline` **hard-fails** at construction when any
@@ -26,6 +30,7 @@ from app.ml.agents.experience_extractor import ExperienceExtractor
 from app.ml.agents.fusion import FusionModel
 from app.ml.agents.preprocessor import TextPreprocessor
 from app.ml.agents.quality import QualityAssessor
+from app.ml.agents.sarcasm import SarcasmDetector
 from app.ml.calibration.conformal import ConformalPredictor
 from app.ml.constants import EARBUD_ASPECTS
 from app.ml.features import build_feature_vector
@@ -36,12 +41,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SignalAgents:
-    """Agents 1–6. ``experience`` may be ``None`` when callers supply its output
-    directly (offline training uses out-of-fold predictions)."""
+    """Agents 1–6 (including Agent 4 Sarcasm Detector). ``experience`` may be
+    ``None`` when callers supply its output directly (offline training uses
+    out-of-fold predictions)."""
 
     preprocessor: TextPreprocessor
     experience: ExperienceExtractor | None
     absa: ABSAModule
+    sarcasm: SarcasmDetector
     consistency: ConsistencyScorer
     quality: QualityAssessor
     domain: DomainRatingModel
@@ -79,10 +86,13 @@ def extract_signals(
         timestamp_ms=timestamp_ms,
         word_count=pre["word_count"],
     )
+    sarcasm_result = agents.sarcasm.process(clean, star_rating=star_rating)
+
     return {
         "preprocessor": pre,
         "experience_extractor": experience_output,
         "absa": agents.absa.process(clean, aspect_mentions),
+        "sarcasm": sarcasm_result,
         "consistency": agents.consistency.process(
             star_rating, experience_output["predicted_score"]
         ),
@@ -98,12 +108,21 @@ def build_explanation(agent_outputs: dict[str, Any], corrected_score: float) -> 
     cons = agent_outputs["consistency"]
     aspects = agent_outputs["absa"]["aspects"]
     pre = agent_outputs["preprocessor"]
+    sarcasm = agent_outputs.get("sarcasm", {})
 
     def names(sentiment: str) -> list[str]:
         return [a.replace("_", " ") for a in EARBUD_ASPECTS if aspects[a]["sentiment"] == sentiment]
 
     parts: list[str] = []
-    if cons["star_inflated"]:
+
+    # Sarcasm flag takes priority in explanation
+    if sarcasm.get("has_irony_or_sarcasm"):
+        parts.append(
+            f"⚠️ Sarcasm detected ({sarcasm['confidence']:.0%} confidence): "
+            f"{sarcasm['explanation']} "
+            f"Score overridden to {corrected_score:.1f}."
+        )
+    elif cons["star_inflated"]:
         parts.append(
             f"The text implies about {corrected_score:.1f} stars despite the {star:g}-star rating."
         )
@@ -147,6 +166,7 @@ class VERAPipeline:
                 paths["absa_config.json"],
                 detector=AspectDetector(paths["aspect_detector.joblib"]),
             ),
+            sarcasm=SarcasmDetector(),
             consistency=ConsistencyScorer(),
             quality=QualityAssessor(imputation=self.fusion.imputation_means),
             domain=DomainRatingModel(paths["domain_tfidf.joblib"]),
@@ -173,6 +193,7 @@ class VERAPipeline:
         verified_purchase: bool | None = None,
         product_title: str | None = "",
         timestamp_ms: int | None = None,
+        product_category: str | None = "earbuds",
     ) -> dict[str, Any]:
         """Score one review (PRD §3.1 output contract)."""
         started = time.perf_counter()
@@ -191,12 +212,50 @@ class VERAPipeline:
         )
         corrected = round(fused["score"], 3)
 
+        # ── Sarcasm override: when Agent 4 detects sarcasm with a calibrated
+        #    score, replace the fused output and invert contaminated aspect sentiments.
+        sarc = outputs.get("sarcasm", {})
+        sarcasm_override = False
+        aspects_result = dict(outputs["absa"]["aspects"])
+
+        if sarc.get("has_irony_or_sarcasm"):
+            if sarc.get("calibrated_score") is not None:
+                corrected = round(sarc["calibrated_score"], 3)
+                lower = max(1.0, corrected - 0.25)
+                upper = min(5.0, corrected + 0.25)
+                confidence = sarc["confidence"]
+                sarcasm_override = True
+                logger.info(
+                    "Sarcasm override: fused %.3f → calibrated %.3f (conf=%.2f)",
+                    fused["score"], corrected, confidence,
+                )
+
+            # Invert deceptive positive aspect sentiments to reflect true reported defects
+            affected = set(sarc.get("affected_aspects", []))
+            for aspect_key, aspect_val in list(aspects_result.items()):
+                if not aspect_val.get("detected"):
+                    continue
+                # If aspect is explicitly affected by defect mentions OR was falsely scored positive under sarcasm
+                if aspect_key in affected or aspect_val.get("sentiment") == "positive":
+                    aspects_result[aspect_key] = {
+                        **aspect_val,
+                        "sentiment": "negative",
+                        "confidence": 0.94,
+                        "prob_neg": 0.94,
+                        "prob_neu": 0.03,
+                        "prob_pos": 0.03,
+                        "sarcasm_inverted": True,
+                    }
+
+        # Update outputs with calibrated aspects before explanation
+        outputs_for_expl = {**outputs, "absa": {"aspects": aspects_result}}
+
         pre, cons, qual = outputs["preprocessor"], outputs["consistency"], outputs["quality"]
         return {
             "corrected_score": corrected,
             "interval": [round(lower, 3), round(upper, 3)],
             "confidence": round(confidence, 3),
-            "aspects": outputs["absa"]["aspects"],
+            "aspects": aspects_result,
             # Agent 4 definition: star − text-derived experience score (positive = inflated).
             "star_text_gap": cons["star_text_gap"],
             "review_quality": qual["quality_score"],
@@ -212,7 +271,14 @@ class VERAPipeline:
                 "experience_score": round(outputs["experience_extractor"]["predicted_score"], 3),
                 "domain_score": outputs["domain_rating"]["domain_score"],
                 "imputed_fields": qual["imputed_fields"],
+                "sarcasm_detected": sarc.get("has_irony_or_sarcasm", False),
+                "sarcasm_confidence": sarc.get("confidence", 0.0),
+                "sarcasm_override": sarcasm_override,
+                "sarcasm_markers": sarc.get("sarcastic_markers", []),
+                "defect_mentions": sarc.get("defect_mentions", []),
+                "affected_aspects": sarc.get("affected_aspects", []),
+                "product_category": product_category or "earbuds",
             },
-            "explanation": build_explanation(outputs, corrected),
+            "explanation": build_explanation(outputs_for_expl, corrected),
             "latency_ms": round((time.perf_counter() - started) * 1000, 1),
         }

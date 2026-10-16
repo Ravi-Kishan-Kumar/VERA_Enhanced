@@ -77,6 +77,7 @@ def process_review(db: Session, review_id: int) -> None:
         helpful_votes=review.helpful_votes,
         verified_purchase=review.verified_purchase,
         product_title=review.product_title,
+        product_category=review.product_category,
     )
     review.corrected_score = result["corrected_score"]
     review.interval_lower, review.interval_upper = result["interval"]

@@ -43,6 +43,7 @@ class Review(Base):
         ),
         Index("idx_reviews_asin", "product_asin"),
         Index("idx_reviews_status", "status"),
+        Index("idx_reviews_category", "product_category"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -50,6 +51,9 @@ class Review(Base):
     # --- Input ----------------------------------------------------------------
     text: Mapped[str] = mapped_column(Text, nullable=False)
     star_rating: Mapped[float] = mapped_column(Float, nullable=False)
+    product_category: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="earbuds", server_default="earbuds"
+    )
     # NULL means "not supplied" — the pipeline imputes training means (PRD §10.1).
     helpful_votes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     verified_purchase: Mapped[bool | None] = mapped_column(nullable=True)

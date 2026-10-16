@@ -1,0 +1,137 @@
+{
+  "study_title": "AirPods / TWS Earbuds vs. Over-Ear Headphones Comparative Study",
+  "sample_sizes": {
+    "earbuds": 4000,
+    "headphones": 1196,
+    "total": 5196
+  },
+  "overall_calibrated_scores": {
+    "earbuds_mean": 2.872,
+    "headphones_mean": 2.843,
+    "difference": -0.028
+  },
+  "hypotheses_evaluation": {
+    "H1_acoustics_superiority_headphones": {
+      "hypothesis": "Over-ear headphones exhibit statistically higher sound_quality and bass sentiment than TWS earbuds.",
+      "confirmed": false,
+      "sound_quality_delta": -0.071,
+      "bass_delta": -0.324,
+      "sound_quality_p_value": 0.034977207444365624,
+      "bass_p_value": 0.004081482030897984
+    },
+    "H2_comfort_and_portability_tradeoff": {
+      "hypothesis": "Earbuds lead in portability and fit seal, while over-ear headphones suffer higher clamping and heat complaints.",
+      "confirmed": true,
+      "earbuds_fit_net": -0.021,
+      "headphones_fit_net": -0.209
+    },
+    "H3_microphone_penalties": {
+      "hypothesis": "TWS earbuds suffer larger rating penalties for microphone deficiencies due to communications usage.",
+      "confirmed": true,
+      "earbuds_mic_net": -0.221,
+      "headphones_mic_net": 0.094
+    }
+  },
+  "aspect_comparison_matrix": {
+    "sound_quality": {
+      "aspect": "sound_quality",
+      "earbuds_mean_net_sentiment": 0.324,
+      "earbuds_mention_count": 2800,
+      "headphones_mean_net_sentiment": 0.253,
+      "headphones_mention_count": 744,
+      "delta_headphones_minus_earbuds": -0.071,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 0.034977207444365624
+    },
+    "bass": {
+      "aspect": "bass",
+      "earbuds_mean_net_sentiment": 0.129,
+      "earbuds_mention_count": 720,
+      "headphones_mean_net_sentiment": -0.195,
+      "headphones_mention_count": 77,
+      "delta_headphones_minus_earbuds": -0.324,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 0.004081482030897984
+    },
+    "battery_life": {
+      "aspect": "battery_life",
+      "earbuds_mean_net_sentiment": 0.164,
+      "earbuds_mention_count": 749,
+      "headphones_mean_net_sentiment": -0.073,
+      "headphones_mention_count": 164,
+      "delta_headphones_minus_earbuds": -0.237,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 0.004731488421079908
+    },
+    "comfort": {
+      "aspect": "comfort",
+      "earbuds_mean_net_sentiment": 0.169,
+      "earbuds_mention_count": 1538,
+      "headphones_mean_net_sentiment": 0.12,
+      "headphones_mention_count": 434,
+      "delta_headphones_minus_earbuds": -0.049,
+      "statistically_significant": false,
+      "mann_whitney_p_value": 0.3297316763535406
+    },
+    "fit": {
+      "aspect": "fit",
+      "earbuds_mean_net_sentiment": -0.021,
+      "earbuds_mention_count": 1407,
+      "headphones_mean_net_sentiment": -0.209,
+      "headphones_mention_count": 354,
+      "delta_headphones_minus_earbuds": -0.188,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 0.001414002881076474
+    },
+    "build_quality": {
+      "aspect": "build_quality",
+      "earbuds_mean_net_sentiment": -0.388,
+      "earbuds_mention_count": 1555,
+      "headphones_mean_net_sentiment": -0.345,
+      "headphones_mention_count": 490,
+      "delta_headphones_minus_earbuds": 0.043,
+      "statistically_significant": false,
+      "mann_whitney_p_value": 0.37382674355332157
+    },
+    "connectivity": {
+      "aspect": "connectivity",
+      "earbuds_mean_net_sentiment": -0.239,
+      "earbuds_mention_count": 1036,
+      "headphones_mean_net_sentiment": -0.072,
+      "headphones_mention_count": 471,
+      "delta_headphones_minus_earbuds": 0.167,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 0.0011378972854419818
+    },
+    "microphone": {
+      "aspect": "microphone",
+      "earbuds_mean_net_sentiment": -0.221,
+      "earbuds_mention_count": 488,
+      "headphones_mean_net_sentiment": 0.094,
+      "headphones_mention_count": 393,
+      "delta_headphones_minus_earbuds": 0.315,
+      "statistically_significant": true,
+      "mann_whitney_p_value": 1.497425366524861e-06
+    },
+    "noise_cancellation": {
+      "aspect": "noise_cancellation",
+      "earbuds_mean_net_sentiment": 0.189,
+      "earbuds_mention_count": 713,
+      "headphones_mean_net_sentiment": 0.338,
+      "headphones_mention_count": 136,
+      "delta_headphones_minus_earbuds": 0.149,
+      "statistically_significant": false,
+      "mann_whitney_p_value": 0.11941300527601297
+    },
+    "value": {
+      "aspect": "value",
+      "earbuds_mean_net_sentiment": -0.014,
+      "earbuds_mention_count": 2050,
+      "headphones_mean_net_sentiment": -0.062,
+      "headphones_mention_count": 534,
+      "delta_headphones_minus_earbuds": -0.048,
+      "statistically_significant": false,
+      "mann_whitney_p_value": 0.3204880651155483
+    }
+  }
+}

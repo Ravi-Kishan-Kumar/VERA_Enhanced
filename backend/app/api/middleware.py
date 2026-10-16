@@ -44,7 +44,7 @@ class SlidingWindowLimiter:
             while bucket and bucket[0] <= now - self.window:
                 bucket.popleft()
             if len(bucket) >= self.limit:
-                return max(1, math.ceil(bucket[0] + self.window - now))
+                return max(1, min(self.window, math.ceil(bucket[0] + self.window - now)))
             bucket.append(now)
             self.clients.move_to_end(client)
             return 0

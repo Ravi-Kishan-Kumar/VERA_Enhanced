@@ -22,6 +22,14 @@ LABELS_V1 = LABELS / "labels_v1.jsonl"
 EXPERIENCE_OOF = LABELS / "experience_oof.csv"
 FUSION_CACHE = PROCESSED / "fusion_cache.joblib"
 
+# --- Headphones specific paths ---
+HEADPHONE_CORPUS = PROCESSED / "headphone_reviews.parquet"
+HEADPHONE_LABELING_POOL = PROCESSED / "headphone_labeling_pool.parquet"
+HEADPHONE_LABELS_V1 = LABELS / "headphone_labels_v1.jsonl"
+HEADPHONE_EXPERIENCE_OOF = LABELS / "headphone_experience_oof.csv"
+HEADPHONE_MODELS = MODELS / "headphones"
+
+
 
 def ensure_dirs() -> None:
     for directory in (RAW, PROCESSED, LABELS, MODELS, REPORTS):

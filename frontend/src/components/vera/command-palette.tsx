@@ -20,6 +20,8 @@ import type { Product } from "@/lib/types"
 const pages = [
   { href: "/", label: "Analyze a review", icon: Home },
   { href: "/products", label: "View rankings", icon: BarChart3 },
+  { href: "/advisor", label: "Product Advisor & RAG Recommendations", icon: Search },
+  { href: "/insights", label: "Insights & Comparative Study", icon: BarChart3 },
   { href: "/about", label: "Read methodology", icon: FileText },
 ]
 

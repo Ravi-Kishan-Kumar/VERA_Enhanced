@@ -18,9 +18,10 @@ import type { Review, ReviewInput, ReviewTask } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const examples = [
-  { label: "Mixed reliability", stars: 3.5, text: "The sound is clear and the bass is great for the price. But the left earbud disconnects every few minutes, and the battery only lasts two hours. Comfortable enough for my commute, just unreliable." },
-  { label: "Detailed praise", stars: 4.5, text: "I have used these earbuds every day for three weeks. The sound is balanced, calls are clear, and they stay comfortable through a full workday. Battery life covers my commute and noise cancellation works well on trains." },
-  { label: "Rating mismatch", stars: 5, text: "Five stars for the fast delivery, but the earbuds themselves feel flimsy. The microphone sounds distant, the fit loosens while running, and Bluetooth drops whenever my phone is in my pocket." },
+  { label: "Mixed reliability", stars: 3.5, category: "earbuds", text: "The sound is clear and the bass is great for the price. But the left earbud disconnects every few minutes, and the battery only lasts two hours. Comfortable enough for my commute, just unreliable." },
+  { label: "Detailed praise", stars: 4.5, category: "earbuds", text: "I have used these earbuds every day for three weeks. The sound is balanced, calls are clear, and they stay comfortable through a full workday. Battery life covers my commute and noise cancellation works well on trains." },
+  { label: "Rating mismatch", stars: 5, category: "earbuds", text: "Five stars for the fast delivery, but the earbuds themselves feel flimsy. The microphone sounds distant, the fit loosens while running, and Bluetooth drops whenever my phone is in my pocket." },
+  { label: "Sarcastic review", stars: 5, category: "headphones", text: "Oh great, another pair of earbuds that disconnect every ten minutes. Just what I needed. I love how the right one dies after an hour and the app crashes whenever I try to change the settings. Truly a premium experience, worth every penny. Can't wait to buy a second pair." },
 ] as const
 
 type Phase = "idle" | "submitting" | "pending" | "processing" | "done" | "failed" | "paused"
@@ -77,6 +78,7 @@ function EmptySignal() {
 export function ReviewAnalyzer() {
   const [text, setText] = useState("")
   const [stars, setStars] = useState(4)
+  const [category, setCategory] = useState<"earbuds" | "headphones">("earbuds")
   const [phase, setPhase] = useState<Phase>("idle")
   const [review, setReview] = useState<Review | null>(null)
   const [error, setError] = useState("")
@@ -164,7 +166,7 @@ export function ReviewAnalyzer() {
     if (Object.keys(validation).length) return
     const votes = String(form.get("helpful_votes") || "")
     const verified = String(form.get("verified_purchase") || "")
-    const input: ReviewInput = { text: cleanText, star_rating: stars, helpful_votes: votes === "" ? null : Number(votes), verified_purchase: verified === "" ? null : verified === "true", product_title: String(form.get("product_title") || "").trim() || null, product_asin: String(form.get("product_asin") || "").trim() || null }
+    const input: ReviewInput = { text: cleanText, star_rating: stars, helpful_votes: votes === "" ? null : Number(votes), verified_purchase: verified === "" ? null : verified === "true", product_title: String(form.get("product_title") || "").trim() || null, product_asin: String(form.get("product_asin") || "").trim() || null, product_category: category }
     controller.current?.abort()
     const abort = new AbortController()
     controller.current = abort
@@ -190,11 +192,12 @@ export function ReviewAnalyzer() {
   return (
     <div className="panel grid items-stretch overflow-hidden lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
       <section className="border-b border-border p-5 sm:p-7 lg:border-b-0 lg:border-r lg:p-8" aria-labelledby="review-input-title">
-        <p className="eyebrow">Analyze a review</p><h2 id="review-input-title" className="mt-2 font-heading text-3xl font-semibold leading-tight tracking-[-0.025em]">Start with what they said.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Paste an English earbud review and choose its original rating.</p>
+        <p className="eyebrow">Analyze a review</p><h2 id="review-input-title" className="mt-2 font-heading text-3xl font-semibold leading-tight tracking-[-0.025em]">Start with what they said.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Paste an earbud or headphone review and choose its original rating.</p>
         <form className="mt-6" onSubmit={submit}><fieldset disabled={pending} className="grid gap-5">
           <div className="grid gap-2"><div className="flex items-end justify-between gap-4"><Label htmlFor="review-text">Review text</Label><span id="review-count" className="metric-number text-xs text-muted-foreground">{text.length.toLocaleString()} / 10,000</span></div><Textarea id="review-text" name="text" value={text} onChange={(event) => { setText(event.target.value); if (fieldErrors.text) setFieldErrors((current) => ({ ...current, text: undefined })) }} rows={7} aria-invalid={Boolean(fieldErrors.text)} aria-describedby={`review-count review-privacy${fieldErrors.text ? " review-text-error" : ""}`} placeholder="The sound is detailed, but after a week the left earbud stopped connecting..." className="min-h-44 resize-y rounded-control bg-background px-3 py-3 leading-6"/>{fieldErrors.text && <p id="review-text-error" className="text-sm text-destructive" role="alert">{fieldErrors.text}</p>}</div>
-          <div><p className="mb-2 text-xs font-medium text-muted-foreground">Try an example</p><div className="flex flex-wrap gap-2">{examples.map((example) => <Button key={example.label} type="button" variant="outline" size="sm" className="rounded-control" onClick={() => { setText(example.text); setStars(example.stars); setFieldErrors({}) }}>{example.label}</Button>)}</div></div>
+          <div><p className="mb-2 text-xs font-medium text-muted-foreground">Try an example</p><div className="flex flex-wrap gap-2">{examples.map((example) => <Button key={example.label} type="button" variant="outline" size="sm" className="rounded-control" onClick={() => { setText(example.text); setStars(example.stars); setCategory(example.category as "earbuds" | "headphones"); setFieldErrors({}) }}>{example.label}</Button>)}</div></div>
           <div className="grid gap-2"><Label htmlFor="star-rating">Original star rating</Label><StarRating value={stars} onChange={(value) => { setStars(value); if (fieldErrors.stars) setFieldErrors((current) => ({ ...current, stars: undefined })) }} disabled={pending}/>{fieldErrors.stars && <p className="text-sm text-destructive" role="alert">{fieldErrors.stars}</p>}</div>
+          <div className="grid gap-2"><Label htmlFor="product-category">Review is about</Label><div className="flex gap-2">{(["earbuds", "headphones"] as const).map((cat) => <Button key={cat} type="button" variant={category === cat ? "default" : "outline"} size="sm" className={cn("h-10 flex-1 rounded-control capitalize", category === cat && "pointer-events-none")} onClick={() => setCategory(cat)}>{cat === "earbuds" ? "🎧 Earbuds / TWS" : "🎧 Headphones"}</Button>)}</div></div>
           <Accordion type="single" collapsible><AccordionItem value="metadata"><AccordionTrigger className="min-h-11 rounded-control px-1">Product and review details <span className="ml-2 text-xs font-normal text-muted-foreground">Optional</span></AccordionTrigger><AccordionContent className="grid gap-4 pt-3 sm:grid-cols-2"><div className="grid gap-2"><Label htmlFor="product-title">Product name</Label><Input id="product-title" name="product_title" maxLength={1_000} placeholder="Wireless earbuds"/></div><div className="grid gap-2"><Label htmlFor="product-asin">Product ASIN</Label><Input id="product-asin" name="product_asin" maxLength={20} autoCapitalize="characters" placeholder="B0ABC12345"/></div><div className="grid gap-2"><Label htmlFor="helpful-votes">Helpful votes</Label><Input id="helpful-votes" name="helpful_votes" type="number" min={0} step={1} max={2_147_483_647} placeholder="Unknown"/></div><div className="grid gap-2"><Label htmlFor="verified-purchase">Verified purchase</Label><select id="verified-purchase" name="verified_purchase" defaultValue="" className="h-11 rounded-control border border-input bg-background px-3 text-sm"><option value="">Unknown</option><option value="true">Yes</option><option value="false">No</option></select></div></AccordionContent></AccordionItem></Accordion>
           <Button size="lg" type="submit" disabled={pending || cooldown > 0} className="h-12 rounded-control">{cooldown > 0 ? `Try again in ${cooldown}s` : pending ? <><LoaderCircle className="animate-spin motion-reduce:animate-none"/>Analyzing review</> : <>Analyze review<ArrowUpRight/></>}</Button>
           <p id="review-privacy" className="text-xs leading-5 text-muted-foreground">Submissions are stored. Product-linked reviews may appear publicly. Remove personal information before submitting.</p>

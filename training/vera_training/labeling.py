@@ -262,12 +262,17 @@ def parse_duration(value: str) -> float:
 
 
 def groq_keys_from_env() -> list[str]:
-    """``GROQ_API_KEY``, ``GROQ_API_KEY_2``, … in order."""
-    names = sorted(
-        (k for k in os.environ if k == "GROQ_API_KEY" or k.startswith("GROQ_API_KEY_")),
-        key=lambda k: (k != "GROQ_API_KEY", k),
-    )
-    return [os.environ[k] for k in names if os.environ[k].strip()]
+    """``GROQ_API_KEY``, ``GROQ_API_KEY_2``, … in order. Supports comma-separated keys."""
+    keys: list[str] = []
+    if "GROQ_API_KEY" in os.environ and os.environ["GROQ_API_KEY"].strip():
+        keys.extend(k.strip() for k in os.environ["GROQ_API_KEY"].split(",") if k.strip())
+    for k in sorted(os.environ):
+        if k.startswith("GROQ_API_KEY_") and os.environ[k].strip():
+            keys.extend(part.strip() for part in os.environ[k].split(",") if part.strip())
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    return [k for k in keys if not (k in seen or seen.add(k))]
+
 
 
 #: PRD §7.3 input caps (bound prompt tokens; long reviews rarely add evidence).

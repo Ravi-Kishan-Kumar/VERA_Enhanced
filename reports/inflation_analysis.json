@@ -1,0 +1,64 @@
+{
+  "total_reviews_analyzed": 5196,
+  "earbuds_reviews": 4000,
+  "headphones_reviews": 1196,
+  "metrics": {
+    "mean_raw_star_rating": 3.0,
+    "mean_calibrated_score": 2.865,
+    "global_inflation_index": 0.135,
+    "median_inflation": 0.0,
+    "std_inflation": 0.682,
+    "pct_reviews_inflated": 35.6,
+    "pct_reviews_concordant": 44.3,
+    "pct_reviews_deflated": 20.1
+  },
+  "star_collapse_table": {
+    "1_star": {
+      "count": 1040,
+      "raw_star": 1.0,
+      "mean_calibrated_score": 1.385,
+      "median_calibrated_score": 1.25,
+      "mean_deflation": -0.385
+    },
+    "2_star": {
+      "count": 1038,
+      "raw_star": 2.0,
+      "mean_calibrated_score": 1.931,
+      "median_calibrated_score": 2.0,
+      "mean_deflation": 0.069
+    },
+    "3_star": {
+      "count": 1038,
+      "raw_star": 3.0,
+      "mean_calibrated_score": 2.607,
+      "median_calibrated_score": 2.5,
+      "mean_deflation": 0.393
+    },
+    "4_star": {
+      "count": 1040,
+      "raw_star": 4.0,
+      "mean_calibrated_score": 3.848,
+      "median_calibrated_score": 4.0,
+      "mean_deflation": 0.152
+    },
+    "5_star": {
+      "count": 1040,
+      "raw_star": 5.0,
+      "mean_calibrated_score": 4.552,
+      "median_calibrated_score": 4.5,
+      "mean_deflation": 0.448
+    }
+  },
+  "authenticity_comparison": {
+    "verified_purchase_mean_inflation": 0.139,
+    "unverified_purchase_mean_inflation": 0.114,
+    "unverified_excess_inflation": -0.025
+  },
+  "sarcasm_detection_analysis": {
+    "sarcastic_review_count": 426,
+    "sarcasm_prevalence_pct": 8.2,
+    "mean_sarcastic_star_rating": 2.08,
+    "mean_sarcastic_experience_score": 1.88,
+    "mean_sarcastic_downgrade": 0.2
+  }
+}

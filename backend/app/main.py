@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.logging import configure_json_logging
 from app.api.middleware import RequestGuard
-from app.api.routes import health, products, reviews
+from app.api.routes import advisor, analytics, compare, health, products, reviews
 from app.config import settings
 
 
@@ -27,6 +27,9 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(reviews.router)
     app.include_router(products.router)
+    app.include_router(analytics.router)
+    app.include_router(advisor.router)
+    app.include_router(compare.router)
     return app
 
 

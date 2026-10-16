@@ -25,6 +25,10 @@ def list_products(
     response: Response,
     sort_by: SortBy = "corrected_score",
     order: SortOrder = "desc",
+    category: str | None = Query(default=None, description="Filter by product category ('earbuds', 'headphones', or 'all')"),
+    min_price: float | None = Query(default=None, ge=0, description="Minimum price in INR"),
+    max_price: float | None = Query(default=None, ge=0, description="Maximum price in INR"),
+    search: str | None = Query(default=None, description="Search product title or ASIN"),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -37,6 +41,18 @@ def list_products(
     column = getattr(Product, sort_by)
     direction: Any = desc(column) if order == "desc" else asc(column)
     query = db.query(Product).filter(Product.corrected_score.is_not(None))
+    if category and category.lower() != "all":
+        query = query.filter(func.lower(Product.product_category) == category.lower())
+    if min_price is not None:
+        query = query.filter(Product.price_inr >= min_price)
+    if max_price is not None:
+        query = query.filter(Product.price_inr <= max_price)
+    if search and search.strip():
+        term = f"%{search.strip().lower()}%"
+        query = query.filter(
+            func.lower(Product.title).like(term) | func.lower(Product.asin).like(term)
+        )
+
     response.headers["X-Total-Count"] = str(query.count())
     return (
         query.order_by(nulls_last(direction), asc(Product.asin)).offset(offset).limit(limit).all()

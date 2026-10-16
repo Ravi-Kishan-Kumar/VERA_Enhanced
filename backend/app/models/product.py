@@ -16,10 +16,17 @@ if TYPE_CHECKING:
 
 class Product(Base):
     __tablename__ = "products"
-    __table_args__ = (Index("idx_products_rank", "rank_position"),)
+    __table_args__ = (
+        Index("idx_products_rank", "rank_position"),
+        Index("idx_products_category", "product_category"),
+    )
 
     asin: Mapped[str] = mapped_column(String(20), primary_key=True)
     title: Mapped[str | None] = mapped_column(Text)
+    product_category: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="earbuds", server_default="earbuds"
+    )
+    price_inr: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     corrected_score: Mapped[float | None] = mapped_column(Float)
     uncertainty: Mapped[float | None] = mapped_column(Float)

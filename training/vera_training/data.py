@@ -74,6 +74,52 @@ def select_earbud_products(metadata: Iterable[dict[str, Any]]) -> dict[str, str]
     }
 
 
+#: Product-title filter for Over-Ear and On-Ear Headphones
+OVEREAR_HEADPHONE_PATTERN = re.compile(
+    r"\b(over[- ]ear|around[- ]ear|on[- ]ear|headband|circumaural|supra[- ]aural|dj headphone|studio headphone|monitor headphone|gaming headset|stereo headphone|wireless headphone)\b",
+    re.IGNORECASE,
+)
+
+#: Exclude in-ear, earbuds, and accessories
+EXCLUDE_IN_EAR_PATTERN = re.compile(
+    r"\b(earbud|earbuds|in[- ]ear|in-ear|tws|airpod|airpods|true wireless|ear tip|ear tips|charging case|earphone|earphones)\b",
+    re.IGNORECASE,
+)
+
+
+def is_overear_headphone_product(row: dict[str, Any]) -> bool:
+    """Contamination filter for Over-Ear and On-Ear headphones (excluding earbuds/TWS)."""
+    title = str(row.get("title") or "")
+    if not row.get("parent_asin"):
+        return False
+    if EXCLUDE_IN_EAR_PATTERN.search(title):
+        return False
+    if not (
+        OVEREAR_HEADPHONE_PATTERN.search(title)
+        or "headphone" in title.lower()
+        or "headset" in title.lower()
+    ):
+        return False
+    categories = row.get("categories") or []
+    if categories:
+        cat_str = " ".join(str(c) for c in categories).lower()
+        if "earbud" in cat_str or "in-ear" in cat_str:
+            return False
+        if any(h in cat_str for h in ["headphone", "over-ear", "on-ear", "headset"]):
+            return not ACCESSORY_PATTERN.search(title)
+    return not ACCESSORY_PATTERN.search(title)
+
+
+def select_headphone_products(metadata: Iterable[dict[str, Any]]) -> dict[str, str]:
+    """``parent_asin -> product title`` for rows passing :func:`is_overear_headphone_product`."""
+    return {
+        str(r["parent_asin"]): str(r.get("title") or "")
+        for r in metadata
+        if is_overear_headphone_product(r)
+    }
+
+
+
 def reviews_for_products(path: str | Path, asins: set[str]) -> Iterator[dict[str, Any]]:
     """Stream only reviews of ``asins``; a regex pre-check skips ``json.loads`` for the rest.
 
