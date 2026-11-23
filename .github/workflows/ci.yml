@@ -102,7 +102,7 @@ jobs:
       - name: Check POSIX entrypoint syntax
         run: sh -n deploy/huggingface-space/start.sh
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: deploy/huggingface-space/Dockerfile
