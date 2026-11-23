@@ -22,7 +22,7 @@ joblib==1.4.2
 # --- API / worker ------------------------------------------------------------
 fastapi==0.115.0
 uvicorn[standard]==0.31.0
-celery==5.4.0
+celery==5.7.0
 redis==5.1.1
 sqlalchemy==2.0.35
 alembic==1.13.3
