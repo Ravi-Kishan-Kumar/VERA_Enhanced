@@ -1,3 +1,3 @@
 # Extra packages needed only by the test suites (CI + local), never in production.
-onnx==1.16.0          # backend/tests/artifact_factory.py builds real ONNX graphs
+onnx==1.23.2          # backend/tests/artifact_factory.py builds real ONNX graphs
 scipy==1.14.1         # training/vera_training/evaluation.py (Wilcoxon)
