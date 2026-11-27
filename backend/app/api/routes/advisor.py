@@ -224,15 +224,19 @@ def recommend_products(query: AdvisorQuery, db: Session = Depends(get_db)) -> di
     if query.category != "all":
         products = [p for p in products if p.product_category == query.category]
 
-    # Filter price bracket
-    if query.price_bracket != "all":
-        products = [p for p in products if _categorize_bracket(p.price_inr) == query.price_bracket]
+    # Custom min/max budget overrides preset price_bracket if provided
+    min_p = query.min_price
+    max_p = query.max_price
+    if min_p is not None and max_p is not None and min_p > max_p:
+        min_p, max_p = max_p, min_p
 
-    # Filter min/max price
-    if query.min_price is not None:
-        products = [p for p in products if p.price_inr is not None and p.price_inr >= query.min_price]
-    if query.max_price is not None:
-        products = [p for p in products if p.price_inr is not None and p.price_inr <= query.max_price]
+    if min_p is not None or max_p is not None:
+        if min_p is not None:
+            products = [p for p in products if p.price_inr is not None and p.price_inr >= min_p]
+        if max_p is not None:
+            products = [p for p in products if p.price_inr is not None and p.price_inr <= max_p]
+    elif query.price_bracket != "all":
+        products = [p for p in products if _categorize_bracket(p.price_inr) == query.price_bracket]
 
     user_weights = query.interests
     norm_w = sum(user_weights.values()) or 1.0

@@ -86,6 +86,8 @@ class Settings(BaseSettings):
     MODEL_DIR: Path = Path("data/models")
     HF_MODEL_REPO: str = ""
     HF_TOKEN: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     @field_validator("DATABASE_URL")
     @classmethod

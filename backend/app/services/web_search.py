@@ -371,10 +371,102 @@ INDIAN_AUDIO_CATALOG: list[dict[str, Any]] = [
         "url": "https://www.amazon.in/dp/B09V7N4W1K",
         "merchant": "Amazon.in",
     },
+    {
+        "name": "Soundcore Q20i Hybrid ANC Headphones",
+        "brand": "Soundcore",
+        "category": "headphones",
+        "price_inr": 3999,
+        "price_str": "₹3,999",
+        "rating": 4.4,
+        "reviews_count": "21,000+",
+        "price_bracket": "mid",
+        "specs": {
+            "driver": "40mm Dynamic Oversized Drivers",
+            "battery": "40 Hours with ANC / 60 Hours standard",
+            "anc": "Hybrid Active Noise Cancellation + Transparency Mode",
+            "bluetooth": "v5.0 with Multipoint Connection & AUX",
+            "codecs": "AAC, SBC, Hi-Res Wired",
+            "weight": "259g",
+        },
+        "pros": ["Best hybrid ANC under ₹4,000", "40h ANC playtime with fast 5-min charge", "22 preset EQ modes in Soundcore app"],
+        "cons": ["Plastic hinge feel compared to Q30", "No carry case included"],
+        "scores": {"sound": 8.3, "bass": 8.7, "battery": 9.3, "comfort": 8.6, "mic": 7.9, "anc": 8.4, "value": 9.5},
+        "url": "https://www.amazon.in/dp/B0C3HCD34R",
+        "merchant": "Amazon.in",
+    },
+    {
+        "name": "boAt Rockerz 551 ANC Over-Ear",
+        "brand": "boAt",
+        "category": "headphones",
+        "price_inr": 2999,
+        "price_str": "₹2,999",
+        "rating": 4.2,
+        "reviews_count": "19,500+",
+        "price_bracket": "mid",
+        "specs": {
+            "driver": "40mm Dynamic Drivers",
+            "battery": "70 Hours ANC / 100 Hours Playback",
+            "anc": "Hybrid ANC up to 35dB with Ambient Mode",
+            "bluetooth": "v5.2 with ASAP Fast Charge",
+            "codecs": "AAC, SBC",
+            "weight": "248g",
+        },
+        "pros": ["100-hour massive playback under ₹3,000", "Hybrid ANC blocks engine & fan hum", "Punchy bass signature"],
+        "cons": ["Bulky earcups on smaller heads", "ENx mic can sound hollow outdoors"],
+        "scores": {"sound": 7.9, "bass": 8.9, "battery": 9.7, "comfort": 8.0, "mic": 7.4, "anc": 7.8, "value": 9.2},
+        "url": "https://www.amazon.in/dp/B0BYJ6H69G",
+        "merchant": "Amazon.in",
+    },
 
     # =========================================================================
     # MID-RANGE EARBUDS (₹2,500 – ₹8,000)
     # =========================================================================
+    {
+        "name": "Redmi Buds 5 Active Noise Cancelling",
+        "brand": "Redmi",
+        "category": "earbuds",
+        "price_inr": 2999,
+        "price_str": "₹2,999",
+        "rating": 4.3,
+        "reviews_count": "16,000+",
+        "price_bracket": "mid",
+        "specs": {
+            "driver": "12.4mm Titanium Dynamic Driver",
+            "battery": "38 Hours Total (10h buds + 28h case)",
+            "anc": "46dB Wideband Hybrid ANC + Dual-Mic AI Call",
+            "bluetooth": "v5.3 Dual-Device Pairing",
+            "codecs": "AAC, SBC",
+            "weight": "42g",
+        },
+        "pros": ["Strong 46dB ANC under ₹3,000", "Dual-device multipoint connectivity", "10 hours per charge"],
+        "cons": ["Glossy case attracts fingerprints", "No wireless charging"],
+        "scores": {"sound": 8.2, "bass": 8.4, "battery": 8.9, "comfort": 8.4, "mic": 8.0, "anc": 8.5, "value": 9.4},
+        "url": "https://www.amazon.in/dp/B0CTHQ38Y8",
+        "merchant": "Amazon.in",
+    },
+    {
+        "name": "OnePlus Nord Buds 3 Pro",
+        "brand": "OnePlus",
+        "category": "earbuds",
+        "price_inr": 3299,
+        "price_str": "₹3,299",
+        "rating": 4.4,
+        "reviews_count": "24,000+",
+        "price_bracket": "mid",
+        "specs": {
+            "driver": "12.4mm Titanized Diaphragm",
+            "battery": "44 Hours Total (12h buds without ANC)",
+            "anc": "49dB Adaptive Noise Cancellation",
+            "bluetooth": "v5.4 with Dual Connection",
+            "codecs": "AAC, SBC",
+            "weight": "47g",
+        },
+        "pros": ["49dB flagship-grade ANC around ₹3,300", "Deep BassWave 2.0 tuning", "IP55 dust and sweat resistance"],
+        "cons": ["No LHDC/LDAC high-res codec", "Pebble case is slightly slippery"],
+        "scores": {"sound": 8.4, "bass": 8.8, "battery": 9.0, "comfort": 8.6, "mic": 8.2, "anc": 8.8, "value": 9.5},
+        "url": "https://www.amazon.in/dp/B0D7VKC7J2",
+        "merchant": "Amazon.in",
+    },
     {
         "name": "OnePlus Buds 3",
         "brand": "OnePlus",
@@ -659,6 +751,98 @@ INDIAN_AUDIO_CATALOG: list[dict[str, Any]] = [
         "url": "https://www.amazon.in/dp/B0CCZ1L2L3",
         "merchant": "Amazon.in",
     },
+    {
+        "name": "Sennheiser Accentum Wireless ANC Headphones",
+        "brand": "Sennheiser",
+        "category": "headphones",
+        "price_inr": 10990,
+        "price_str": "₹10,990",
+        "rating": 4.4,
+        "reviews_count": "4,800+",
+        "price_bracket": "premium",
+        "specs": {
+            "driver": "37mm Sennheiser Dynamic Transducers",
+            "battery": "50 Hours with Hybrid ANC Active",
+            "anc": "Hybrid Active Noise Cancellation + Transparency",
+            "bluetooth": "v5.2 with aptX HD & Multipoint",
+            "codecs": "aptX HD, aptX, AAC, SBC",
+            "weight": "222g",
+        },
+        "pros": ["Signature Sennheiser audiophile clarity under ₹12,000", "50-hour ANC battery life", "aptX HD wireless fidelity"],
+        "cons": ["Clamping force feels snug initially", "No 3.5mm analog audio jack"],
+        "scores": {"sound": 9.2, "bass": 8.7, "battery": 9.6, "comfort": 8.5, "mic": 8.4, "anc": 8.8, "value": 9.3},
+        "url": "https://www.amazon.in/dp/B0CHFWY2Z4",
+        "merchant": "Amazon.in",
+    },
+    {
+        "name": "Sony ULT WEAR Over-Ear ANC Headphones",
+        "brand": "Sony",
+        "category": "headphones",
+        "price_inr": 16990,
+        "price_str": "₹16,990",
+        "rating": 4.5,
+        "reviews_count": "3,600+",
+        "price_bracket": "premium",
+        "specs": {
+            "driver": "40mm ULT Power Sound Drivers + V1 Processor",
+            "battery": "30 Hours with ANC / 50 Hours without ANC",
+            "anc": "Dual Noise Sensor ANC (Flagship V1 Chip)",
+            "bluetooth": "v5.2 with LDAC & Multipoint",
+            "codecs": "LDAC, AAC, SBC",
+            "weight": "255g",
+        },
+        "pros": ["Dedicated ULT button for club-grade deep sub-bass", "XM5-derived V1 ANC processor", "Foldable design with hard case"],
+        "cons": ["Bass modes can overpower vocals unless toggled off", "Warm earcups in summer"],
+        "scores": {"sound": 9.0, "bass": 9.8, "battery": 9.2, "comfort": 9.1, "mic": 8.6, "anc": 9.2, "value": 9.0},
+        "url": "https://www.amazon.in/dp/B0CY6L3Q8Y",
+        "merchant": "Amazon.in",
+    },
+    {
+        "name": "Sony WF-C700N Noise Cancelling Earbuds",
+        "brand": "Sony",
+        "category": "earbuds",
+        "price_inr": 8990,
+        "price_str": "₹8,990",
+        "rating": 4.3,
+        "reviews_count": "7,400+",
+        "price_bracket": "premium",
+        "specs": {
+            "driver": "5mm High-Compliance Dynamic Driver with DSEE",
+            "battery": "15 Hours ANC / 20 Hours total",
+            "anc": "Digital Noise Cancelling + Wind Noise Reduction",
+            "bluetooth": "v5.2 with Multipoint Connection",
+            "codecs": "AAC, SBC",
+            "weight": "4.6g per bud",
+        },
+        "pros": ["Featherlight comfortable fit for small ears", "Natural Sony vocal balance", "IPX4 splash resistance"],
+        "cons": ["Case provides only 1 extra charge", "No LDAC support"],
+        "scores": {"sound": 8.7, "bass": 8.3, "battery": 7.6, "comfort": 9.3, "mic": 8.4, "anc": 8.6, "value": 8.8},
+        "url": "https://www.amazon.in/dp/B0BX24B4X8",
+        "merchant": "Amazon.in",
+    },
+    {
+        "name": "Samsung Galaxy Buds2 Pro",
+        "brand": "Samsung",
+        "category": "earbuds",
+        "price_inr": 11999,
+        "price_str": "₹11,999",
+        "rating": 4.5,
+        "reviews_count": "14,000+",
+        "price_bracket": "premium",
+        "specs": {
+            "driver": "Coaxial 2-Way (10mm Woofer + 5.3mm Tweeter)",
+            "battery": "18 Hours ANC / 29 Hours total",
+            "anc": "Intelligent 3-Mic ANC + Voice Detect",
+            "bluetooth": "v5.3 with 24-bit Samsung Seamless Codec",
+            "codecs": "SSC Hi-Fi, AAC, SBC",
+            "weight": "5.5g per bud",
+        },
+        "pros": ["AKG-tuned coaxial dual drivers with crisp studio balance", "Compact matte ergonomic fit + IPX7 waterproof", "360 Audio head tracking"],
+        "cons": ["24-bit SSC codec requires Samsung Galaxy phone", "5h ANC battery per charge"],
+        "scores": {"sound": 9.2, "bass": 8.7, "battery": 8.0, "comfort": 9.1, "mic": 8.6, "anc": 8.9, "value": 9.1},
+        "url": "https://www.amazon.in/dp/B0B8YNW9P4",
+        "merchant": "Amazon.in",
+    },
 ]
 
 
@@ -788,31 +972,37 @@ def search_products_india(
             if eb_subset:
                 pool = eb_subset
 
-    # 2. STRICT CUSTOM BUDGET FILTERING (INR ₹)
-    # If user provided min_price or max_price, strictly filter by budget
+    # 2. STRICT BUDGET / BRACKET FILTERING (INR ₹)
+    if min_price is not None and max_price is not None and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    def _bracket_of(price: float | int) -> str:
+        if price < 2500:
+            return "budget"
+        if price <= 8000:
+            return "mid"
+        return "premium"
+
     custom_budget_applied = min_price is not None or max_price is not None
-    budget_filtered_pool = []
-    for p in pool:
-        price = p["price_inr"]
-        if min_price is not None and price < min_price:
-            continue
-        if max_price is not None and price > max_price:
-            continue
-        budget_filtered_pool.append(p)
+    if custom_budget_applied:
+        budget_filtered_pool = []
+        for p in pool:
+            price = p["price_inr"]
+            if min_price is not None and price < min_price:
+                continue
+            if max_price is not None and price > max_price:
+                continue
+            budget_filtered_pool.append(p)
+    elif price_bracket in ("budget", "mid", "premium"):
+        budget_filtered_pool = [
+            p for p in pool if _bracket_of(p["price_inr"]) == price_bracket
+        ]
+    else:
+        budget_filtered_pool = list(pool)
 
-    # If price_bracket was selected and no custom min/max was provided
-    if not custom_budget_applied and price_bracket in ("budget", "mid", "premium"):
-        bracket_filtered = [p for p in pool if p["price_bracket"] == price_bracket]
-        if bracket_filtered:
-            budget_filtered_pool = bracket_filtered
-
-    # If the custom range is so narrow that no products match, provide the closest alternatives
     fallback_applied = False
     if not budget_filtered_pool:
         fallback_applied = True
-        # Pick the 4 closest products by price difference
-        target_price = ((min_price or 0) + (max_price or 10000)) / 2
-        budget_filtered_pool = sorted(pool, key=lambda p: abs(p["price_inr"] - target_price))[:6]
 
     # 3. SEMANTIC QUERY & INTEREST SCORING
     scored_pool: list[dict[str, Any]] = []
@@ -881,7 +1071,15 @@ def search_products_india(
 
     insight_prefix = f"Filtered for {', '.join(filter_desc)}: " if filter_desc else ""
     if fallback_applied:
-        live_insights = f"No exact matches found between ₹{int(min_price or 0):,} and ₹{int(max_price or 0):,}. Showing closest alternatives in India."
+        if min_price is not None and max_price is not None:
+            range_desc = f"between ₹{int(min_price):,} and ₹{int(max_price):,}"
+        elif min_price is not None:
+            range_desc = f"above ₹{int(min_price):,}"
+        elif max_price is not None:
+            range_desc = f"under ₹{int(max_price):,}"
+        else:
+            range_desc = f"in the {price_bracket} bracket"
+        live_insights = f"No exact matches found {range_desc}. Try widening the budget range or switching category."
     else:
         live_insights = f"{insight_prefix}Found {len(scored_pool)} top-rated Indian market models ranked by your requirements."
 
@@ -893,6 +1091,7 @@ def search_products_india(
         "top_overall": top_overall,
         "total_analyzed": len(INDIAN_AUDIO_CATALOG),
         "total_matching": len(scored_pool),
+        "fallback_applied": fallback_applied,
         "live_market_insights": live_insights,
         "applied_filters": {
             "category": category,

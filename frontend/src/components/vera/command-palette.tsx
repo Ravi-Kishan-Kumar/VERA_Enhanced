@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, FileText, Home, Search } from "lucide-react"
+import { BarChart3, FileText, Home, MessageSquare, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -21,6 +21,7 @@ const pages = [
   { href: "/", label: "Analyze a review", icon: Home },
   { href: "/products", label: "View rankings", icon: BarChart3 },
   { href: "/advisor", label: "Product Advisor & RAG Recommendations", icon: Search },
+  { href: "/chat", label: "AI Audio Buyer Chatbot", icon: MessageSquare },
   { href: "/insights", label: "Insights & Comparative Study", icon: BarChart3 },
   { href: "/about", label: "Read methodology", icon: FileText },
 ]

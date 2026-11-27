@@ -17,7 +17,7 @@ const links = [
   { href: "/products", label: "Rankings" },
   { href: "/advisor", label: "Advisor" },
   { href: "/insights", label: "Insights" },
-  { href: "/compare", label: "Compare" },
+  { href: "/chat", label: "Chatbot" },
   { href: "/about", label: "Methodology" },
 ]
 

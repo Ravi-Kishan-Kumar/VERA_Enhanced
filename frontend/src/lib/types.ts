@@ -160,6 +160,7 @@ export type WebAdvisorResponse = {
   top_overall: WebProductItem[];
   total_analyzed: number;
   total_matching: number;
+  fallback_applied?: boolean;
   live_market_insights: string;
   applied_filters?: {
     category?: string;
@@ -184,4 +185,35 @@ export type WebCompareResponse = {
   verdict: string;
   source: string;
 };
+
+export type ChatProduct = {
+  name: string;
+  brand: string;
+  category: "earbuds" | "headphones" | string;
+  price_str: string;
+  price_inr: number;
+  rating: number;
+  reviews_count: string;
+  specs: Record<string, string>;
+  pros: string[];
+  cons: string[];
+  url: string;
+  merchant: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  suggested_products?: ChatProduct[];
+  follow_up_questions?: string[];
+};
+
+export type ChatResponse = {
+  reply: string;
+  suggested_products: ChatProduct[];
+  follow_up_questions: string[];
+};
+
 

@@ -3,17 +3,12 @@
 import {
   ArrowRight,
   Award,
-  Check,
-  ChevronDown,
   ExternalLink,
-  Filter,
   Globe,
   Headphones,
-  Info,
   Layers,
   Percent,
   Search,
-  ShoppingBag,
   SlidersHorizontal,
   Sparkles,
   Star,
@@ -29,7 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
-import type { AdvisorResponse, BracketSuggestions, ProductAdvisorItem, WebAdvisorResponse, WebProductItem } from "@/lib/types"
+import type { AdvisorResponse, BracketSuggestions, ProductAdvisorItem, WebAdvisorResponse } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const INTEREST_CONFIGS = [
@@ -78,7 +73,6 @@ export function ProductAdvisor() {
 
   // Selected bracket tab for browsing top 5
   const [browseCategory, setBrowseCategory] = useState<"earbuds" | "headphones">("earbuds")
-  const [browseBracket, setBrowseBracket] = useState<"budget" | "mid" | "premium">("mid")
 
   useEffect(() => {
     let active = true
@@ -88,7 +82,7 @@ export function ProductAdvisor() {
         setBrackets(data)
         setLoading(false)
       })
-      .catch((err) => {
+      .catch(() => {
         if (!active) return
         toast.error("Failed to load product suggestions.")
         setLoading(false)
@@ -102,20 +96,43 @@ export function ProductAdvisor() {
     setInterests((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+  const runSearch = async (overrides?: {
+    category?: "all" | "earbuds" | "headphones"
+    priceBracket?: "all" | "budget" | "mid" | "premium"
+    minPrice?: string
+    maxPrice?: string
+    searchMode?: "web" | "dataset"
+  }) => {
+    const activeCategory = overrides?.category ?? category
+    const activeBracket = overrides?.priceBracket ?? priceBracket
+    const activeMinStr = overrides?.minPrice !== undefined ? overrides.minPrice : minPrice
+    const activeMaxStr = overrides?.maxPrice !== undefined ? overrides.maxPrice : maxPrice
+    const activeMode = overrides?.searchMode ?? searchMode
+
+    let parsedMin = activeMinStr.trim() !== "" ? parseFloat(activeMinStr) : null
+    let parsedMax = activeMaxStr.trim() !== "" ? parseFloat(activeMaxStr) : null
+    if (parsedMin !== null && Number.isNaN(parsedMin)) parsedMin = null
+    if (parsedMax !== null && Number.isNaN(parsedMax)) parsedMax = null
+    if (parsedMin !== null && parsedMin < 0) parsedMin = 0
+    if (parsedMax !== null && parsedMax < 0) parsedMax = 0
+    if (parsedMin !== null && parsedMax !== null && parsedMin > parsedMax) {
+      ;[parsedMin, parsedMax] = [parsedMax, parsedMin]
+      setMinPrice(String(parsedMin))
+      setMaxPrice(String(parsedMax))
+    }
+
     setSearching(true)
     try {
       const payload = {
-        category,
-        price_bracket: priceBracket,
-        min_price: minPrice ? parseFloat(minPrice) : null,
-        max_price: maxPrice ? parseFloat(maxPrice) : null,
+        category: activeCategory,
+        price_bracket: parsedMin !== null || parsedMax !== null ? "all" : activeBracket,
+        min_price: parsedMin,
+        max_price: parsedMax,
         query_text: queryText.trim() || null,
         interests,
       }
 
-      if (searchMode === "web") {
+      if (activeMode === "web") {
         const res = await api<WebAdvisorResponse>("/advisor/web-recommend", {
           method: "POST",
           body: JSON.stringify(payload),
@@ -131,11 +148,16 @@ export function ProductAdvisor() {
         setTotalMatches(res.total_matches)
         setWebResults(null)
       }
-    } catch (err) {
+    } catch {
       toast.error("Recommendation search failed.")
     } finally {
       setSearching(false)
     }
+  }
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    await runSearch()
   }
 
   const handleClearFilters = () => {
@@ -280,7 +302,14 @@ export function ProductAdvisor() {
             <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-xl border border-border w-fit">
               <button
                 type="button"
-                onClick={() => { setSearchMode("web"); setRecommendations(null); }}
+                onClick={() => {
+                  const hadResults = webResults !== null || recommendations !== null
+                  setSearchMode("web")
+                  setRecommendations(null)
+                  if (hadResults && searchMode !== "web") {
+                    void runSearch({ searchMode: "web" })
+                  }
+                }}
                 className={cn(
                   "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                   searchMode === "web"
@@ -293,7 +322,14 @@ export function ProductAdvisor() {
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchMode("dataset"); setWebResults(null); }}
+                onClick={() => {
+                  const hadResults = webResults !== null || recommendations !== null
+                  setSearchMode("dataset")
+                  setWebResults(null)
+                  if (hadResults && searchMode !== "dataset") {
+                    void runSearch({ searchMode: "dataset" })
+                  }
+                }}
                 className={cn(
                   "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                   searchMode === "dataset"
@@ -368,7 +404,13 @@ export function ProductAdvisor() {
                     size="sm"
                     variant={category === item.id ? "default" : "outline"}
                     className="flex-1 rounded-lg text-xs"
-                    onClick={() => setCategory(item.id as any)}
+                    onClick={() => {
+                      const nextCat = item.id as "all" | "earbuds" | "headphones"
+                      setCategory(nextCat)
+                      if (webResults !== null || recommendations !== null) {
+                        void runSearch({ category: nextCat })
+                      }
+                    }}
                   >
                     {item.label}
                   </Button>
@@ -392,7 +434,15 @@ export function ProductAdvisor() {
                     size="sm"
                     variant={priceBracket === item.id ? "default" : "outline"}
                     className="flex-1 rounded-lg text-xs px-2"
-                    onClick={() => setPriceBracket(item.id as any)}
+                    onClick={() => {
+                      const nextBracket = item.id as "all" | "budget" | "mid" | "premium"
+                      setPriceBracket(nextBracket)
+                      setMinPrice("")
+                      setMaxPrice("")
+                      if (webResults !== null || recommendations !== null) {
+                        void runSearch({ priceBracket: nextBracket, minPrice: "", maxPrice: "" })
+                      }
+                    }}
                   >
                     {item.label}
                   </Button>
@@ -402,21 +452,34 @@ export function ProductAdvisor() {
 
             {/* Custom Min / Max Price in INR */}
             <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Custom Budget (INR ₹)</Label>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Custom Budget (INR ₹){" "}
+                <span className="normal-case font-normal text-[10px] text-muted-foreground/70">(overrides bracket above)</span>
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
+                  min={0}
                   placeholder="Min ₹"
                   value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setMinPrice(val)
+                    if (val.trim() !== "") setPriceBracket("all")
+                  }}
                   className="h-9 rounded-lg bg-background text-xs"
                 />
                 <span className="text-muted-foreground text-xs">to</span>
                 <Input
                   type="number"
+                  min={0}
                   placeholder="Max ₹"
                   value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setMaxPrice(val)
+                    if (val.trim() !== "") setPriceBracket("all")
+                  }}
                   className="h-9 rounded-lg bg-background text-xs"
                 />
               </div>
@@ -515,27 +578,41 @@ export function ProductAdvisor() {
               </Badge>
             </div>
 
-            {/* Active Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground font-medium">Active filters:</span>
-              <Badge variant="outline" className="capitalize text-[11px] font-medium">
-                Category: {category === "headphones" ? "🎧 Headphones" : category === "earbuds" ? "🎧 Earbuds" : "All Audio"}
-              </Badge>
-              {(minPrice || maxPrice) ? (
-                <Badge variant="outline" className="text-[11px] font-medium border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
-                  Custom Budget: ₹{minPrice ? Number(minPrice).toLocaleString("en-IN") : "0"} – ₹{maxPrice ? Number(maxPrice).toLocaleString("en-IN") : "Any"}
-                </Badge>
-              ) : priceBracket !== "all" ? (
-                <Badge variant="outline" className="capitalize text-[11px] font-medium">
-                  Bracket: {priceBracket}
-                </Badge>
-              ) : null}
-              {queryText && (
-                <Badge variant="outline" className="text-[11px] font-medium">
-                  Query: &quot;{queryText}&quot;
-                </Badge>
-              )}
-            </div>
+            {/* Active Filter Pills (reflecting what the displayed results were filtered with) */}
+            {(() => {
+              const af = webResults.applied_filters
+              const dispCat = af?.category ?? category
+              const dispMin = af?.min_price
+              const dispMax = af?.max_price
+              const dispBracket = af?.price_bracket ?? priceBracket
+              const dispQuery = af?.query_text
+              return (
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground font-medium">Applied filters:</span>
+                  <Badge variant="outline" className="capitalize text-[11px] font-medium">
+                    Category: {dispCat === "headphones" ? "🎧 Headphones" : dispCat === "earbuds" ? "🎧 Earbuds" : "All Audio"}
+                  </Badge>
+                  {(dispMin != null || dispMax != null) ? (
+                    <Badge variant="outline" className="text-[11px] font-medium border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+                      Custom Budget: ₹{dispMin != null ? dispMin.toLocaleString("en-IN") : "0"} – ₹{dispMax != null ? dispMax.toLocaleString("en-IN") : "Any"}
+                    </Badge>
+                  ) : dispBracket && dispBracket !== "all" ? (
+                    <Badge variant="outline" className="capitalize text-[11px] font-medium border-primary/40 text-primary">
+                      Bracket: {dispBracket === "budget" ? "Budget (< ₹2.5k)" : dispBracket === "mid" ? "Mid (₹2.5k–₹8k)" : "Premium (> ₹8k)"}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[11px] font-medium">
+                      Budget: All Prices
+                    </Badge>
+                  )}
+                  {dispQuery && (
+                    <Badge variant="outline" className="text-[11px] font-medium">
+                      Query: &quot;{dispQuery}&quot;
+                    </Badge>
+                  )}
+                </div>
+              )
+            })()}
 
             {(!webResults.matches || webResults.matches.length === 0) ? (
               <div className="rounded-2xl border border-dashed border-border p-8 text-center space-y-2">
@@ -633,10 +710,10 @@ export function ProductAdvisor() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <Link
-                          href={`/compare?product_a=${encodeURIComponent(item.name)}`}
+                          href={`/chat`}
                           className="flex h-9 items-center justify-center rounded-lg bg-muted text-xs font-semibold hover:bg-muted/80 text-foreground transition-colors"
                         >
-                          Compare <ArrowRight className="size-3 ml-1" />
+                          Ask Chatbot <ArrowRight className="size-3 ml-1" />
                         </Link>
                         <a
                           href={item.url}
@@ -680,7 +757,7 @@ export function ProductAdvisor() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {recommendations.map((item, idx) => (
+                {recommendations.map((item) => (
                   <div
                     key={item.asin}
                     className="flex flex-col justify-between rounded-xl border border-border bg-background p-5 shadow-2xs hover:border-primary/50 transition-all"
@@ -819,6 +896,10 @@ export function ProductAdvisor() {
                       {[1, 2, 3, 4, 5].map((i) => (
                         <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/30" />
                       ))}
+                    </div>
+                  ) : list.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border/70 p-6 text-center text-xs text-muted-foreground">
+                      No seeded products in this bracket yet. Try switching category or using Live Indian Market search above.
                     </div>
                   ) : (
                     list.map((item, rank) => (
